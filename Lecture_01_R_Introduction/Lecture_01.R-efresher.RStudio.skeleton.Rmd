@@ -1,0 +1,2301 @@
+---
+title: 'Advanced Visualizations Lecture 01'
+output:
+  html_notebook: default
+  pdf_document: default
+---
+
+```{r, echo=FALSE}
+# This allows the file to be LIVE and run without errors stopping it.
+knitr::opts_chunk$set(error = TRUE)
+```
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/CAGEF_services_slide.png?raw=true" width="700"/>
+:::
+
+## Advanced Graphics and Data Visualization in R
+
+## Lecture 01: "R"-efresher on R and best practices
+
+------------------------------------------------------------------------
+
+## 0.1.0 An overview of Advanced Graphics and Data Visualization in R
+
+**"Advanced Graphics and Data Visualization in R"** is brought to you by the Centre for the Analysis of Genome Evolution & Function's (CAGEF) bioinformatics training initiative. CSB1021 was developed to enhance the skills of students with basic backgrounds in R by focusing on available philosophies, methods, and packages for plotting scientific data. Many of the datasets and examples used in this course will be drawn from real-world datasets and the techniques learned herein aim to be broadly applicable to multiple fields.
+
+This lesson is the first in a 6-part series. The aim for the end of this series is for students to recognize how to import, format, and display data based on their intended message and audience. The format and style of these visualizations will help to identify and convey the key message(s) from their experimental data.
+
+The structure of the class is a **code-along style** in R markdown notebooks. At the start of each lecture, skeleton versions of the lecture will be provided for use on the [University of Toronto datatools Hub](https://datatools.utoronto.ca) so students can program along with the instructor.
+
+------------------------------------------------------------------------
+
+## 0.2.0 Lecture objectives
+
+This week will be your crash-course on R markdown notebooks and R to refresh on packages and principles that will be relevant throughout our course. In our lectures and your assignments we will be working with some uncurated data to simulate the full experience of working with data from start to finish. It's important that we are all familiar with, and understand the majority of the tidy data methods that we'll be using in class so that we can focus on the new material as it appears. We'll use some standard packages and practices to finesse our data before visualizing it, so let's R-efresh ourselves.
+
+At the end of this lecture we will have covered the following topics:
+
+1.  Working with R markdown notebooks and best coding practices.
+2.  R data types, objects and working with them.
+3.  Long-format and tidy data principles using the `tidyverse` package.
+4.  Basic control flow and plotting.
+
+------------------------------------------------------------------------
+
+## 0.3.0 A legend for text format in R markdown
+
+`grey background` - a package, function, code, command or directory. Backticks are also use for in-line code.\
+*italics* - an important term or concept or an individual file or folder\
+**bold** - heading or a term that is being defined\
+[blue text]{style="color:blue"} - named or unnamed hyperlink
+
+`...` - Within each coding cell this will indicate an area of code that students will need to complete for the code cell to run correctly.
+
+::: {.alert .alert-block .alert-info}
+<b>Blue box:</b> A key concept that is being introduced
+:::
+
+::: {.alert .alert-block .alert-warning}
+<b>Yellow box:</b> Risk or caution
+:::
+
+::: {.alert .alert-block .alert-success}
+<b>Green boxes:</b> Recommended reads and resources to learn R
+:::
+
+::: {.alert .alert-block .alert-danger}
+<b>Red boxes:</b> A comprehension question which may or may not involve a coding cell. You usually find these at the end of a section.
+:::
+
+------------------------------------------------------------------------
+
+## 0.4.0 Lecture and data files used in this course
+
+### 0.4.1 Weekly Lecture and skeleton files
+
+Each week, new lesson files will appear within your RStudio folders. We are pulling from a GitHub repository using this [Repository git-pull link](https://r.datatools.utoronto.ca/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Fuoft-csb-datasci%2F2026-03-Adv_Graphics_R&urlpath=rstudio%2F&branch=main). Simply click on the link and it will take you to the [University of Toronto datatools Hub](https://datatools.utoronto.ca). You will need to use your UTORid credentials to complete the login process. From there you will find each week's lecture files in the directory `/2026-03-Adv_Graphics_R/Lecture_XX`. You will find a partially coded `skeleton.Rmd` file as well as all the data files necessary to run the week's lecture.
+
+Alternatively, you can download the R-Markdown Notebook (`.Rmd`) and data files from the RStudio server to your personal computer if you would like to run independently of the Toronto tools.
+
+### 0.4.2 Live-coding HTML page
+
+A live lecture version will be available at [camok.github.io](https://uoft-csb-datasci.github.io/2026-03.Adv_Graphics_R/index.html) that will update as the lecture progresses. Be sure to refresh to take a look if you get lost!
+
+### 0.4.3 Post-lecture PDFs
+
+At the end of each lecture there will be a completed version of the lecture code released as an HTML file under the Modules section of Quercus.
+
+### 0.4.4 Data used in this lesson
+
+Today's datasets will focus on using a [Federal Respiratory Virus Detections dataset](https://www.canada.ca/en/public-health/services/surveillance/respiratory-virus-detections-canada.html). This data was used to compile a [weekly FluWatch report](https://www.canada.ca/en/public-health/services/diseases/flu-influenza/influenza-surveillance/weekly-influenza-reports.html). The data we'll use today is a compilation of the 2022-2023 and 2023-2024 datasets. This will be an interesting dataset to look at since it contains datapoints across time regarding the testing and positive results for multiple respiratory viruses.
+
+### 0.4.4.1 Dataset 1: 2022-24_surveillanceDataset.csv
+
+This dataset contains the amalgamated observations of virus testing reports for multiple reporting laboratories across Canada during the respiratory seasons of 2022-2023 and 2023-2024. Seasons tend to begin in the 35th week of the year and end on the 34th week (or earlier) of the next calendar year.
+
+------------------------------------------------------------------------
+
+## 0.5.0 Packages used in this lesson
+
+`tidyverse` which has a number of packages including `dplyr`, `tidyr`, `stringr`, `forcats` and `ggplot2`
+
+`viridis` helps to create color-blind palettes for our data visualizations
+
+`lubridate` and `zoo` are helper packages used for working with date formats in R
+
+Let's run our first code cell!
+
+```{r}
+# Packages to help tidy our data
+library(tidyverse)
+library(magrittr)
+
+```
+
+------------------------------------------------------------------------
+
+# 1.0.0 Coding in R Markdown Notebooks
+
+Work with your R markdown notebook on the University of Toronto datatools hub will all be contained within a new browser tab with the address bar showing something similar to
+
+`https://r.datatools.utoronto.ca/user/calvin.mok@utoronto.ca/rstudio/`
+
+All of this is running remotely on a University of Toronto server rather than your own machine.
+
+You'll see a directory structure from your home folder:
+
+ie `/home/rstudio/2026-03-Adv_Graphics_R/` and a folder to `Lecture_01_R_Introduction` within. Clicking on that, you'll find `Lecture_01.R-efresher.skeleton.Rmd` which is the notebook we will use for today's code-along lecture.
+
+------------------------------------------------------------------------
+
+## 1.1.0 Why is this class using R Markdown Notebooks?
+
+We've implemented the class this way to reduce the burden of having to install various programs. While installation can be a *little* tricky, it's really not that bad. For this course, however, you don't need to go through all of that just to improve on your data visualization skills.
+
+R markdown notebooks also give us the option of inserting "markdown" text much like what you're reading at this very *exact* moment. So we can intersperse ideas and information between our learning code blocks.
+
+There is, however an appendix section at the end of this lecture detailing how to install the R-kernel itself and the integrated development environment (IDE) called RStudio.
+
+------------------------------------------------------------------------
+
+## 1.2.0 Packages contain useful functions that we'll use often
+
+So... what are in these packages? A **package** can be a collection of - functions - data objects - compiled code - functions that *override* base functions in R
+
+**Functions** are the basic workhorses of R; they are the tools we use to analyze our data. Each function can be thought of as a unit that has a specific task. A function takes an input, evaluates it using an expression (e.g. a calculation, plot, merge, etc.), and returns an output (a single value, multiple values, a graphic, etc.).
+
+In this course we will frequently rely on a package called the `tidyverse` which is also composed of a series of other packages we can use to reformat our data like `readr`, `dplyr`, `tidyr` and `stringr`.
+
+------------------------------------------------------------------------
+
+## 1.3.0 R markdown notebooks run the programming language R
+
+Behind the scenes of each markdown notebook the R kernel is running. As we move from code cell to new code cell, all of the variables or objects we have created are stored within memory. We can refer to these as we run the code and move forward but if you overwrite or change them by mistake, you may to have rerun multiple cell blocks!
+
+There are some options in the "Code" menu that can alleviate these problems such as "Run Region \> Run All Chunks Above". If you think you've made a big error by overwriting a key object, you can use that option to "re-initialize" all of your previous code!
+
+Unfortunately, the run order of your code is not tracked. When a code cell is still actively running you will see in the top-right corner of the `Console` window (lower pane) denoted as a `STOP` sign icon. Clicking on this will interrupt the kernel and stop code execition, although depending on the complexity of the code it may take a moment.
+
+**Remember these friendly keys/shortcuts:**
+
+-   `Arrow` keys to navigate up and down (and within a cell)
+-   `Ctrl`+`Shift`+`Enter` to run a cell (both code and markdown)
+-   `Ctrl`+`Enter` to run a single line of code within a code cell
+-   `Alt`+`Ctrl`+`Enter` to run the next cell
+-   `Ctrl`+`Shift`+`C` to quickly comment and uncomment single or multiple lines of code
+-   `Tab` can be used while coding to autocomplete variable, function and file names, and even look at a list of possible parameters for functions.
+-   `Ctrl`+`Alt`+`I` to insert a new coding cell
+
+### 1.3.3 Why would you want to use a Markdown Notebook?
+
+Depending on your needs, you may find yourself doing the following:
+
+-   Analysing data for your project using available packages
+-   Re-analysing data for your project
+-   Analysing multiple datasets for your project
+-   Collaborating on data and analyses for your project
+-   **Explaining** your data and analyses to a supervisor or collaborator!
+
+Markdown allows you to alternate between "markdown" notes and "code" that can be run or re-run on the fly.
+
+Each data run and its results can be saved individually as a new notebook to compare data and small changes to analyses!
+
+### 1.3.4 What is markdown language?
+
+Markdown is a markup language that lets you write HTML and Java Script code in combination with other languages. This allows you to make html, pdf, and text documents that are combinations of text and code, enhancing reproducibility, a key aspect in scientific work. Having everything in a single place also boosts productivity during results interpretation - no need to go back and forth between tabs, pages, and documents. They can all be integrated in a single document, allowing for a more fluid narrative of the story that you are communicating to your audience (less distractions for you!). For example, the lines of code below and the text you are reading right now were created in R's Markdown language. (Do not worry about the R code just yet. We will get there sooner than you think).
+
+As mentioned, markdown also allows you to write in [LaTeX](https://www.latex-project.org/about/), a document preparation system to write mathematical notation. All it takes is to wrap LaTeX code between single dollar signs (\$) for inline notation or two double dollar signs (\$\$), one at the beginning of the equation and one at the end. For example, the equation ***Yi = beta0 + beta1 xi + epsilon_i, i=1, ..., N*** can be transformed into LaTeX code by adding some characters: \*\*\*Y_i = \beta\_0 + \beta\_1 x_i + \varepsilon\_i, i=1, \dots, N\*\*\*. Now, if we use \$\$ before and after the LaTeX code, this is what we get:
+
+$$ 
+Y_i = \beta_0 + \beta_1 x_i + \varepsilon_i, i=1, \dots,N 
+$$
+
+See? Just like that! Here is an example of a table made in Markdown, showing some of the most popular R libraries for data science:
+
+| Library   | Use                                                            |
+|-----------|----------------------------------------------------------------|
+| tidyverse | Simplified tabular-data processing functions                   |
+| ggplot2   | Data visualization package typically included in the tidyverse |
+| shiny     | Used to create interactive R-based web pages and interfaces    |
+| car       | Popular statistical analysis with Type II and III ANOVA tables |
+
+These are just a few examples of what you can do with Jupyter and Markdown. To find out more on how to get the best of Markdown, head on over to the [R Markdown cookbook] (<https://bookdown.org/yihui/rmarkdown-cookbook/>).
+
+Once you are finished writing your code and interpreting those results in a markdown notebook, you can render the notebook into pdf, html, and many other formats. There are several ways to achieve this. The easiest option is to go to **File \> Knit Document**. Afterwards there should be an option to view in browser at which point you can save as an HTML or print it to PDF.
+
+------------------------------------------------------------------------
+
+## 1.4.0 Following best practices for coding will make life easier
+
+Let's discuss some important behaviours before we begin coding:
+
+-   Code annotation (commenting)
+
+-   Variable naming conventions
+
+-   Best practices
+
+### 1.4.1 Annotate your code with the `#` symbol
+
+**Why bother?**
+
+-   "Can you rerun this analysis and but change X parameter?" - *Anonymous PI*
+
+-   "Can you make this plot, but with dashed lines, a different axis, with error bars?" - *Anonymous labmate*
+
+-   "Can I borrow your code?" - *Anonymous collaborator or officemate or PI*
+
+-   "Why is that object being sent to that function? What is it returning?" - *You, Me, and anyone reading your code*
+
+**Your worst collaborator is potentially you in 6 days or 6 months. Do you remember what you had for breakfast last Tuesday?**
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/LOTR_elvish.png?raw=true" width="700"/>
+:::
+
+Credit: <https://www.testbytes.net/blog/programming-memes/>
+
+You can annotate your code for selfish reasons, or altruistic reasons, but annotate your code.
+
+**How do I start?**
+
+-   It is, in general, part of best coding practices to keep things tidy and organized.
+
+-   A hash-tag `#` will comment your text. Inside a code cell in an R notebook or anywhere in an R script, all text *after* a hashtag will be ignored by R and by many other programming languages. It's very useful to add comments about changes in your code, as well as detailed explanations about your scripts.
+
+-   Put a description of what you are doing near your code at every process, decision point, or non-default argument in a function. For example, why you selected `k=6` for an analysis, or the Spearman over Pearson option for your correlation matrix, or quantile over median normalization, or why you made the decision to filter out certain samples.
+
+-   Break your code into sections to make it readable. Scripts are just a series of steps and major steps should be titled/outlined with your reasoning - much like when presenting your research.
+
+-   Give your objects informative object names **that are not the same as function names**.
+
+**Comments may/should appear in three places:**
+
+-   At the beginning of your code: What's the objective of your script?
+-   Above every function you create: Why did you have to write your own function versus those that are already available in package x?
+-   In-line or in-between lines of code: Why did you write that piece of code? What does it do? Why did you change a function's defaults?
+
+```         
+# Example commenting section
+# At the beginning of the script, describing the purpose of your script and what you are trying to solve
+
+bedmasAnswer <- 5 + 4 * 6 - 0 #In line: Describing a part of your code that is not obvious what it is for. 
+
+#---------- Section dividers helps organize code structure ----------#
+## Feel free to add extra hash tags to visually separate or emphasize comments
+```
+
+**Maintaining well-documented code is also good for mental health!**
+
+------------------------------------------------------------------------
+
+### 1.4.2 Naming conventions for files, objects, and functions in R
+
+-   Cannot start with a number
+-   Cannot contain spaces or special characters in the name
+-   Avoid naming your variables using names already used by R (for, next, while, etc.).
+-   Consider appending the object type to your variable name (data frame = df, list = list, etc.)
+
+**Stylistically, you have the following options:**
+
+-   All lower case: e.g. **myfirstobject**
+-   Period separated: e.g. **my.first.object**
+-   Underscore separated: e.g. **my_first_object**
+-   camelCase1: e.g. **myFirstObject**
+-   CamelCase2: e.g. **MyFirstObject** (Usually reserved for *Class* names)
+
+The most important aspects of naming conventions are being concise and consistent! Throughout this course you'll see a hybrid system that uses the **underscore** to separate words but a **period** right before denoting the object type ie `this_data.object`.
+
+------------------------------------------------------------------------
+
+### 1.4.3 Best Practices for Writing Scripts
+
+-   Start each script with a description of what it does.
+
+-   Then load all required packages.
+
+-   Consider what working directory you are in when sourcing a script.
+
+-   Use comments to mark off sections of code.
+
+-   Put function definitions at the top of your file, or in a separate file if there are many.
+
+-   Name and style code consistently.
+
+-   Break code into small, discrete pieces.
+
+    -   This is more easily accomplished when working with different code cells in Jupyter Notebook.
+
+-   Factor out common operations rather than repeating them.
+
+-   Keep all of the source files for a project in one directory and use relative paths to access them.
+
+    -   Using relative paths close to or inside your script's directory makes it easier to package or move around your scripts too.
+
+-   Keep track of the memory used by your program.
+
+-   Always start with a clean environment instead of saving the workspace.
+
+-   Keep track of session information in your project folder.
+
+-   Have someone else review your code.
+
+-   Use version control.
+
+For more information on best coding practices, please visit [swcarpentry](https://swcarpentry.github.io/r-novice-inflammation/06-best-practices-R/)
+
+------------------------------------------------------------------------
+
+## 1.5.0 Trouble-shooting basics
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/GooglingForProgrammers.jpg?raw=true" width="600"/>
+
+We all run into problems. We'll see a lot of mistakes happen in class too! That's OK if we can learn from our errors and quickly (or eventually) recover.
+:::
+
+### 1.5.1 Determine the location and type of error
+
+Usually when R generates an error it will produce some information about what has happened. This usually includes an error message detailing the *kind of error* it encountered or an error message generated by the function. It can also include a line where the error was encountered, or the name of the last function that was called before the error was encountered.
+
+### 1.5.2 Common errors
+
+-   *file does not exist*: Use `getwd()` to check where you are working, type`list.files()` or the `Files` pane to check that your file exists there, and `setwd()` to change your directory if necessary. Preferably, work inside an *R project* with all project-related files in that same folder. Your working directory will be set automatically when you open the project (this can be done by using `File -> New File -> R Notebook` and following prompts).
+
+-   *typos*: R is case sensitive so always check that you've spelled everything right. Get used to using the *tab autocomplete* feature when possible. This can reduce typos and increase your overall programming speed.
+
+-   *open quotes, parentheses, brackets*:
+
+    -   **R Markdown Notebooks** highlight the current cursor-denoted bracket set in $\color{grey}{\text{grey}}$. If the bracket is unmatched on either side, a small red $\color{red}{\text{X}}$ icon will appear on the left-hand side of the code cell, beside the line numbers.
+
+-   *data type*: Use commands like `typeof()` and `class()` to check what type of data you have. Use `str()` to peak at your data structures if you're making assumptions about it.
+
+-   *unexpected answers*: To access the *help menu*, type `help("function")`, `?function` (using the name of the function that you want to check), or `help(package = "package_name")`.
+
+    -   **In RStudio**: the result will appear in a side-panel on the bottom right of the development environment.
+
+-   *function not found*: Make sure the package name is properly spelled, installed, AND loaded. Libraries can be loaded to the environment using the function `library("package_name")`. If you only need one function from a package, or need to specify to what package a function belongs because there are functions with the same name that belong to different packages, you can use a double colon, i.e. `package_name::function_name`.
+
+-   *the R bomb!!*: The `session aborted` can happen for a variety of reasons, like not having enough computational power to perform a task or also because of a system-wide failure.
+
+    -   **RStudio**: restart the Kernel from the menu `Session -> Restart R`. You will need to rerun your previous cells!
+
+-   **cheatsheets**: Meet your new best friends: [cheatsheets](https://rstudio.com/resources/cheatsheets/)!
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Wilde-quote.jpg?raw=true" width="700"/>
+:::
+
+------------------------------------------------------------------------
+
+### 1.5.3 Finding answers online
+
+-   99% of the time, someone has already asked your question
+
+-   Google, Stack overflow, R Bloggers, SEQanswers, Quora, ResearchGate, RSeek, twitter, even reddit
+
+-   Including the program, version, error, package and function helps, so be specific. Sometimes it is useful to include your operating system and version (Windows 10, Ubuntu 18, Mac OS 10, etc.).
+
+-   You may run into assignment questions where the tools I've provided in lecture are not enough to reproduce the example output *exactly* as provided. If you wish to go that extra mile you may need to look for answers elsewhere by consulting references from the class or searching for it yourself. ***The truth is out there!***
+
+### 1.5.3.1 Asking a question in an online forum
+
+-   Summarize your question in the title (be concise and objective!).
+-   Introduce your question, how you ran into the problem, **and how you tried to solve it yourself**. If you haven't done the bolded thing, do the bolded thing.
+-   Show enough of your code and data for others to try to reproduce the problem/error. This is often referred to as a reproducible example or reprex.
+-   Add tags that match your problem.
+-   Respond to the feedback and vote for the answered that you picked. People put in their free time to answer and help you.
+-   Take a look at [StackOverflow's tips on how to ask questions](https://stackoverflow.com/help/how-to-ask), as well as [CRAN's](https://www.r-project.org/posting-guide.html)
+
+**Remember**: Everyone looks for help online **ALL THE TIME**. It is very common. Also, with programming there are multiple ways to come up with an answer, even different packages that let you do the same thing in different ways. You will work on refining these aspects of your code as you go along in this course and in your coding career.
+
+Last but not least, to make life easier: Under the `Help` pane, there is a list of cheatsheets related to RStudio, the tidyverse and other useful packages.
+
+------------------------------------------------------------------------
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/backToTheFoundationsOfR-logo-png-transparent.png?raw=true" width="700"/>
+:::
+
+# 2.0.0 Foundations of R
+
+There are many tips and tricks to remember about R but here we'll quickly recall some fundamental knowledge that could be relevant in later lectures.
+
+## 2.1.0 Assigning variables
+
+If we want to hold on to a number, calculation, or object we need to *assign* it to a named variable. R has multiple methods for assigning a value to a variable and an order of precedence!
+
+`->` and `->>` **Rightward assignment**: we won't really be using this in our course.
+
+`<-` and `<<-` **Leftward assignment**: assignment used by most 'authentic' R programmers but really just a historical keyboard throwback.
+
+`=` **Leftward assignment**: commonly used token for assignment in many other programming languages but holds dual meaning!
+
+### Notes
+
+-   In R, the assignment of a variable *does not* produce any standard output.
+
+-   R processes at each new line unless you use a semicolon (;) to separate commands. This applies to assignment as well. One exception being when your function calls are spaced across lines and contained within the `()`.
+
+-   R calculates the right side of the assignment first the result is then applied to the left.
+
+    -   This is a common paradigm in programming that simplifies variable behaviours for counting and tracking results as they build up over time. This also allows us to increment variables or manipulate objects to update them!
+
+------------------------------------------------------------------------
+
+## 2.2.0 Data types are the basic building blocks of R
+
+Data types are used to classify the basic spectrum of values that are used in R. Here's a table describing *some* of the common data types we'll encounter.
+
+| Data type | Description | Example |
+|:---|:---|:---|
+| character | Can be single or multiple characters (strings) of letters and symbols. Assigned using double `'` or `"` | a#c&E |
+| integer | Whole number values, either positive or negative | 1 |
+| double | Any number that is not an integer | 7.5 |
+| logical | Also known as a boolean, representing the state of a conditional (question) | TRUE or FALSE |
+| factor | Used as a way to make categorical values. Often used as a finite set of values that appear to be string-based in nature except they can be given a user-specified order. | Yes/No or Low/Medium/High |
+| NA | Represents the value of "Not Available" usually seen when imported data has missing values | NA |
+
+### 2.2.1 Data structures hold single or multiple values
+
+The job of data structures is to "host" the different data types. There are five basic types of data structures that we'll use in R:
+
+| Data structure | Dimensions | Restrictions |
+|:---|:---|:---|
+| vector | 1D | Holds a single data type |
+| matrix | 2D | Holds a single data type |
+| array | nD | Holds a single data type |
+| data frame | 2D | Holds multiple data types with some restrictions |
+| list | 1D (technically) | Holds multiple data types AND structures |
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/data_structures.jpg?raw=true" width="700"/>
+
+Sometimes it is helpful to imagine Data Structures as real-world objects to understand how they are shaped and related to each other.
+:::
+
+------------------------------------------------------------------------
+
+### 2.2.2 Vectors are like a queue of a single data type
+
+-   Also known as atomic vectors, each element within a vector must be of the same data type: **logical, integer, double, character**, complex, or raw.
+
+-   For each vector there are two key properties that can be queried with `typeof()` and `length()`.
+
+-   There is a numerical order to a vector, much like a queue AND you can access each element (piece of data) individually or in groups. Elements are ordered from `1` to `length(your_vector)` and can be accessed with an indexing operator `[]`
+
+-   Elements of a vector may be **named**, to facilitate subsetting by character vectors.
+
+-   Elements of a vector may be subset by a logical vector.
+
+```{r}
+# Build a character vector
+char.vector <- c("Canada", "Maple Syrup", "Hockey")
+char.vector
+
+# subset by a single value
+char.vector[...]
+
+# subset by multiple values
+char.vector[...]
+
+# subset by removing values (cannot be mixed with positive values)
+char.vector[c(-1, ...)]
+
+# subset with repeating multiple values
+char.vector[c(1, 2, 3, ...)]
+```
+
+```{r}
+# Build a named character vector by including variable names
+character.vector <- c(a = "Canada", b = "Maple Syrup", c = "Hockey")
+character.vector
+
+# subset by element name
+character.vector[c("a", "c")]
+
+# subset by an explicit vector of logicals
+character.vector[c(FALSE, TRUE, TRUE)]
+
+# Or subset by an implicit vector of logicals
+character.vector[character.vector != "Canada"]
+```
+
+------------------------------------------------------------------------
+
+### 2.2.2.1 Coercion changes data from one type to another (where applicable)
+
+R will implicitly force (*coerce*) your vector to be of one data type. In this case, the type that is most inclusive is a character vector. When we explicitly coerce a change from one data type to the next, it is known as *casting*. You can cast between certain data types and also object types.
+
+-   Type-casting examples: `as.logical()`, `as.integer()`, `as.double()`, `as.numeric()`, `as.character()`, and `as.factor()`
+
+-   Structure casting examples: `as.data.frame()`, `as.list()`, and `as.matrix()`
+
+Importantly, when coercing, the R kernel converts from more specific to general types usually in this order:
+
+::: {align="center"}
+logical $\rightarrow$ integer $\rightarrow$ numeric $\rightarrow$ complex $\rightarrow$ character $\rightarrow$ list.
+:::
+
+```{r}
+# Make a logical vector and display its structure
+logical.vector <- c(TRUE, FALSE, TRUE, FALSE, FALSE)
+str(logical.vector)
+
+# Make a numeric vector and display its structure
+numeric.vector <- c(-1:10)
+str(numeric.vector)
+
+# Make a mixed vector and display its structure. Take a note of its typing afterwards
+mixed.vector <- c(FALSE, TRUE, 1, 2, "three", 4, 5, ...)
+str(mixed.vector)
+```
+
+```{r}
+# Attempt to coerce our vectors
+# logical to numeric
+as.numeric(...)
+
+# numeric to logical
+as.logical(...)
+
+# numeric to character
+as.character(...)
+
+# mixed to a numeric. Note what happens when elements cannot be converted
+as.numeric(...)
+```
+
+------------------------------------------------------------------------
+
+### 2.2.3 Data Frames hold tabular data
+
+### 2.2.3.1 Object classes
+
+Now that we have had the opportunity to create a few different vector objects, let's talk about what an object *class* is. An object class can be thought of as a structure with attributes that will behave a certain way when passed to a function. Because of this
+
+-   data frames, lists and matrices have their own classes
+-   vectors inherit from their data type (**e.g.** vectors of characters behave like characters)
+
+Some R package developers have created their own object classes. For example, many of the functions in the `tidyverse` generate `tibble` objects. They behave in most ways like a `data.frame` but have a more refined print structure, making it easier to see information such as column types when viewing them quickly. In general, from a trouble-shooting standpoint, it is good to be aware that your data *may* need to be formatted to fit a certain class of object when using different packages.
+
+After we are done tidying most of our datasets, they will be in tibble objects, but all of the basic data frame functions apply to these as well.
+
+------------------------------------------------------------------------
+
+### 2.2.3.2 Data frames are groups of vectors aligned as columns
+
+While matrices are 2-dimensional structures limited to a single specific type of data within each instance, data frames treat each column of the structure like a vector. The data frame, however, can have multiple data types mixed across each *different* column. Data frame rules to remember are:
+
+1.  Within a column, all members must be of the same data type (ie character, numeric, Factor, etc.)
+2.  All columns must have the same number of rows (hence the matrix shape)
+
+Data frames allows us to generate tables of mixed information much like an Excel spreadsheet.
+
+```{r}
+# Generate a data frame with different variable/column types
+mixed.df <- data.frame(... = character.vector,
+                       ... = numeric.vector[2:4],
+                       ... = logical.vector[1:3])
+
+# View the data frame
+mixed.df
+
+# Check the structure of the data frame
+str(mixed.df)
+```
+
+------------------------------------------------------------------------
+
+### 2.2.3.3 Some useful data frame commands (for now)
+
+-   `nrow(data_frame)` retrieves the number of rows in a data frame.
+
+-   `ncol(data_frame)` retrieves the number of columns in a data frame.
+
+-   `data_frame$column_name` accesses a specific column by its name.
+
+-   `data_frame[x,y]` accesses a specific element located at row x, column y
+
+-   `rownames(data_frame)` retrieves or assigns row names to your data frame
+
+-   `colnames(data_frame)` retrieves or assigns columns names to your data frame
+
+There are many more ways to access and manipulate data frames that we'll explore further down the road. Let's review some basic data frame code.
+
+```{r}
+# query the dimensions of the data frame
+dim(mixed.df)
+nrow(mixed.df)
+ncol(mixed.df)
+
+# retrieve row and column names
+rownames(mixed.df)
+colnames(mixed.df)
+```
+
+```{r}
+# print the mixed data frame
+mixed.df
+
+# Access portions of the data frame
+# a single column
+str(mixed.df$...)
+
+# a single element
+mixed.df[2, 3]          # Use index position
+mixed.df[3, ...]  # Mix index position and column names
+
+# multiple rows
+mixed.df[c(1,3), ]      # Use vectors to select groups of rows/columns
+mixed.df[-2, ]          # Use negative values to EXCLUDE rows/columns
+```
+
+------------------------------------------------------------------------
+
+### 2.2.4 Lists are amorphous bundles strung together with code
+
+Lists can hold mixed data types of different lengths. These are especially useful for bundling data of different types to pass around your scripts, and functions, or when receiving output from functions! Rather than having to call multiple variables by name, you can store them in a single list!
+
+If you forget the contents of your list, use the `str()` function to check out its structure. `str()` will tell you the number of items in your list and their data types.
+
+```{r}
+# Make a named list of various items
+mixed.list <- list(Canandiana = character.vector, values = numeric.vector, mixed.data = ...)
+
+# Look at some information about our list
+str(mixed.list)
+
+# What are the names of the elements in mixed.list
+names(mixed.list)
+```
+
+Note the `$` sign on the left-hand side of the `str()` output. What follows is the name of our list element proceeded by the `:` and a description of that element.
+
+```{r}
+# Lists can often be unnamed
+unnamed.list <- list(character.vector, numeric.vector, ...)
+
+# Look at some information about our unnamed list
+str(unnamed.list)
+
+names(unnamed.list)
+```
+
+------------------------------------------------------------------------
+
+### 2.2.4.1 Accessing elements from a list is accomplished in multiple ways
+
+Accessing lists is much like opening up a box of boxes of chocolates. You never know what you're gonna get... when you forget the structure!
+
+You can access elements with a mixture of number and naming annotations much like data frames. Also `[[x]]` is meant to access the x^th^ "element" of the list. Note that unnamed lists cannot be accessed with naming annotations.
+
+-   `[x]` returns a list object with your element(s) of choice in the list.
+-   `[[x]]` returns a "single" element only but that element could be a vector, data frame, list, etc.
+
+```{r}
+# Subset our list with []
+mixed.list[c(...)]
+mixed.list[...]
+```
+
+```{r}
+# Pull out a single element
+mixed.list[[2]]
+mixed.list[["Canadiana"]]
+
+# Give a vector as input to [[]]
+mixed.list[[c(1,3)]]
+# vs equivalent
+mixed.list[[1]][3]
+
+# Access a single element from a data frame nested in a list
+mixed.list[[c(...)]]
+# vs equivalient
+mixed.list[[3]][...]
+```
+
+------------------------------------------------------------------------
+
+::: {.alert .alert-block .alert-danger}
+**Comprehension Question 2.2.4.1:** Suppose we had a list named **multiDF.list** consisting of 3 data frames, as shown in the following code cell. How would you subset the 2nd and 3rd data frames into their own list? How would you access the "values" column from the 3rd data frame? Use the following code cell to help you out.
+:::
+
+```{r, eval=FALSE}
+# Comprehension answer code 2.2.4.1
+
+multiDF.list = list(mixed.df, rbind(mixed.df, mixed.df), rbind(mixed.df, mixed.df, mixed.df))
+
+str(multiDF.list)
+
+# Subset the 2nd and 3rd dataframes as their own list
+
+...
+
+# Output the "values" column of the 3rd dataframe
+
+...
+```
+
+------------------------------------------------------------------------
+
+## 2.3.0 Factors codify your data into categorical variables
+
+Ah, the dreaded factors! A factor is a *class* of object used to encode a character vector into categories. They are used to store categorical variables and although it is tempting to think of them as character vectors this is a **dangerous mistake**. Adding or changing data in a data frame with pre-existing factors requires that you match factor levels correctly as well.
+
+Factors make perfect sense if you are a statistician designing a programming language (!) but to everyone else they exist solely to torment us with confusing errors. At its core, a factor is really just an integer vector or character data with an additional attribute, called `levels()`, which defines the accepted values for that variable.
+
+### 2.3.0.1 Why use factors?
+
+Why not just use character vectors, you ask?
+
+Believe it or not factors do have some useful properties. For example, factors allow you to specify all possible values a variable may take even if those values are not in your data set. Think of *conditional formatting* in Excel. We also use them heavily in generating statistical analyses and in grouping data when we want to visualize it.
+
+### 2.3.0.2 A historical note about R 4.0.x versus r 3.x.x
+
+Since the inception of R, `data.frame()` calls have been used to create data frames **but** the default behaviour was to convert strings (and characters) to factors! This is a throwback to the purpose of R, which was to perform statistical analyses on datasets with methods like **ANOVA** which examine the relationships between variables (ie factors)!
+
+As R has become more popular and its applications and packages have expanded, incoming users have been faced with remembering this obscure behaviour, leading to lost hours of debugging grief as they wonder why they can't pull information from their dataframes to do a simple analysis on *C. elegans* strain abundance via molecular inversion probes in datasets of multiplexed populations. **#SuspciouslySpecific**
+
+That meant that users usually had to create data frames including the toggle
+
+`data.frame(name=character(), value=numeric(), stringsAsFactors = FALSE)`
+
+Fret no more! As of **R 4.x.x** the default behaviour has switched and `stringsAsFactors = FALSE` is the **default**! Now if we want our character columns to be factors, we must convert them ***explicitly***, or turn this behaviour on at the outset of creating each data frame!
+
+```{r}
+# Generate a data frame and include factors for all character-based content
+str(data.frame(Canadiana = character.vector,
+               values = numeric.vector[2:4],
+               manmade = logical.vector[1:3],
+               type = c("Nature", "Sport", "Nature"),
+               ...)
+    )
+```
+
+```{r}
+# Explicitly define factors for specific variables.
+str(data.frame(Canadiana = ...(character.vector),
+               values = numeric.vector[2:4],
+               manmade = logical.vector[1:3],
+               type = c("Nature", "Nature", "Sport"),
+               stringsAsFactors = FALSE)
+    )
+```
+
+------------------------------------------------------------------------
+
+### 2.3.1 Specify `factors` and their levels explicitly during or after `data.frame` creation
+
+From above, you can specify which columns of strings are converted to factors at the time of declaring your column information. Alternatively you can coerce character vectors to factors after generating them.
+
+R's default behaviour puts factor levels in *alphabetical order*. This can cause problems if we aren't aware of it. You can check the order of your factor levels with the `levels()` command. Furthermore you can specify, during factor creation, your level order.
+
+**Always check to make sure your factor levels are what you expect.**
+
+With factors, we can deal with our character levels directly, or their numeric equivalents.
+
+```{r}
+# Generate a data frame and include factors
+str(data.frame(Canadiana = character.vector,
+               values = numeric.vector[2:4],
+               manmade = logical.vector[1:3],
+               type = factor(c("Nature", "Nature", "Sport"),
+                                     ... = c("Sport", "Nature"))
+              )
+   )
+```
+
+```{r}
+# Coerce a factor after the fact
+
+# Build a data frame
+mixed.df <- data.frame(Canadiana = character.vector,
+               values = numeric.vector[2:4],
+               manmade = logical.vector[1:3],
+               type = c("Nature", "Nature", "Sport"))
+
+# Set our factor after declaring the data frame
+mixed.df$type <- factor(..., levels=c("Sport", "Nature"))
+
+
+str(mixed.df)
+```
+
+------------------------------------------------------------------------
+
+### 2.3.2 More facts about factors
+
+1.  Use `levels()` to list the levels and their order for your factor
+
+2.  To rename levels of a factor, declare and reassign your factor.
+
+3.  Move a single level to the first position within your factor levels with `relevel()`.
+
+4.  Factor levels can be assigned an order of precedence during their creation with the parameter `ordered = TRUE`.
+
+5.  Define labels for your factor during their creations with the parameter `labels = c()`. Note that level order is assigned *before* labels are added to your data. You are essentially labeling the *integer* assigned to your factor levels so be careful when using this parameter!
+
+::: {.alert .alert-block .alert-success}
+**Advanced factors functions with forcats**. If you're looking for more advanced functions that you can use to manipulate, sort or update factors, check out the [forcats function](https://forcats.tidyverse.org/reference/fct_relevel.html). With it, you can refactor based on functions, frequency, or explicitly re-specify the order of one or more factor levels. We'll see this package in action in more detail during later lectures.
+:::
+
+------------------------------------------------------------------------
+
+## 2.4.0 Mathematical operations on data frames and arrays
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/matrix-addition.gif?raw=true" width="500"/>
+:::
+
+Yes, you can treat data frames and arrays like large lists where mathematical operations can be applied to individual elements or to entire columns or more!
+
+### 2.4.1 Mathematical operations are applied differently depending on data type
+
+-   **numeric data**: operations applied as expected
+-   **non-numeric** (ie characters): error will be thrown
+-   **factors**: warning message and NAs returned
+-   **logical data** (`TRUE`/`FALSE`): coercion to numeric before applying operations
+
+Therefore be careful to specify your numeric data for mathematical operations.
+
+```{r, error=TRUE}
+mixed.df
+
+# Add to each element
+mixed.df$values + 3
+
+# Add columns to each other
+mixed.df$values + mixed.df$values
+
+# multiply each element by a constant
+mixed.df$values * 4
+
+# implicit coercion of logical to integer
+mixed.df$manmade * 5 
+
+# Perform math on a factor
+mixed.df$type * 6
+
+# Convert the factor to a numeric first
+as.numeric(mixed.df$type) * 7
+
+# Can we perform math on non-numeric variables?
+...
+```
+
+------------------------------------------------------------------------
+
+## 2.5.0 Using the `apply()` family of functions to perform actions across data structures
+
+The above are illustrative examples to see how our different data structures behave. In reality, you will want to do calculations across rows and columns, and not on your entire matrix or data frame.
+
+### 2.5.1 The `apply()` function will recognize basic functions and use them on vectorized data
+
+For example, we might have a count table where rows are genes, columns are samples, and we want to know the sum of all the counts for a gene. To do this, we can use the `apply()` function. `apply()` Takes an array, matrix (or something that can be coerced as such, like a numeric data frame), and applies a function over rows or columns. The `apply()` function takes the following parameters:
+
+-   `X`: an array. matrix or something that can be coerced to these objects
+-   `MARGIN`: defines how to apply the function; `1` = rows, `2` = columns.
+-   `FUN`: the function to be applied. Supplied as a function name ***without*** the `()` suffix
+-   `...`: this notation means we can pass additional parameters to our function defined by `FUN`.
+
+and returns a vector, array or list depending on the nature of X.
+
+Let's practice by invoking the `sum` function.
+
+```{r}
+# Make a sample data frame of numeric values only
+numeric.df = data.frame(geneA = numeric.vector, geneB = numeric.vector*2, geneC = numeric.vector*3)
+
+# We now have a 12x3 dataframe
+numeric.df
+
+# Apply sum() to each row
+apply(numeric.df, ..., sum)
+
+# Apply sum() to each column
+apply(numeric.df, ..., sum)
+```
+
+------------------------------------------------------------------------
+
+### 2.5.2 The other members of the `apply()` family
+
+There are 3 additional members of the `apply()` family that perform similar functions with varying outputs
+
+1.  `lapply(data, FUN, ...)` is usable on dataframes, lists, and vectors. It returns a `list` as output.
+
+-   It will coerce non-list objects to a list
+-   Additional arguments to `FUN` will be applied from the `...`
+
+2.  `sapply(data, FUN, ...)` works similarly to `lapply()` except it tries to ***simplify*** the output to the most elementary data structure possible. i.e. it will return the simplest form of the data that makes sense as a representation.
+
+3.  `mapply(FUN, data, ...)` is short for "multivariate" apply and it applies a function to multiple lists or multiple vector arguments.
+
+```{r}
+# Use lapply on the columns of numeric.df
+...(numeric.df, sum)
+str(lapply(numeric.df, sum))
+```
+
+```{r}
+# Use sapply on the columns of numeric.df
+...(numeric.df, sum)
+
+# We are returned a named vector
+str(sapply(numeric.df, sum))
+```
+
+```{r}
+# Using lapply and sapply and sum on an actual list
+sum.list <- list(...)
+str(sum.list)
+
+# lapply on the list returns a list
+lapply(sum.list, sum)
+
+# sapply on the list returns a vector
+sapply(sum.list, sum)
+```
+
+```{r}
+# Use lapply to select portions from a list
+sum.list <- list(numeric.df, numeric.df)
+
+# Extract the first row from each member of the list
+print("sum.list first rows:")
+lapply(sum.list, ...)
+
+# Take a close look at what sapply returns in this case
+sapply(sum.list, "[", 1,)
+
+# Extract the 2nd column from each member of the list
+print("sum.list second columns:")
+lapply(sum.list, "[", , 2)
+
+# Take a close look at what sapply returns in this case
+sapply(sum.list, "[", , 2)
+```
+
+------------------------------------------------------------------------
+
+Notice how in using `sapply()` to extract from a list of data frames, a single matrix was returned - a single output in the simplest form that maintains structure.
+
+Now let's give `mapply()` a try.
+
+```{r}
+# Use mapply in an example on numeric.vector
+mapply(sum, numeric.vector, numeric.vector[0:3])
+mapply(sum, numeric.vector, numeric.vector)
+numeric.vector + numeric.vector
+
+# Use mapply in an example on numeric.df
+mapply(sum, numeric.df, numeric.df)
+mapply(sum, numeric.df)
+
+# Use mapply on the rep function to see its output
+mapply(rep, c(...), 4)
+```
+
+So from our observations, we see what `mapply()` looks like
+
+1.  For our vectors, it has summed them element-wise. This is equivalent to `numeric.vector + numeric.vector`
+2.  For our dataframes, it has calculated the column-wise sums and matched them with columns of the same position in the other data frames to calculate a total sum.
+
+In each case, it is applying `sum` to the first elements (or columns) of each argument, then the second elements, and so on. So new sets are formed for each element-wise position before applying the `FUN` argument!
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/not_available.png?raw=true" width="700"/>
+:::
+
+## 2.6.0 Special data: `NA` and `NaN` values
+
+Missing values in R are handled as `NA` (Not Available). Impossible values (like the results of dividing by zero) are represented by `NaN` (Not a Number). These types of values can be considered *null values*. These two types of values, especially NAs, have special ways to be dealt with, otherwise it may lead to errors in some functions.
+
+For our purposes, we are not interested in keeping `NA` data within our datasets so we will usually detect and remove them or replace them within our data after it is imported.
+
+### 2.6.1 Helpful functions and information for dealing with `NA` data
+
+1.  `is.na()` returns a logical vector reporting which values from your query are `NA`.
+2.  `complete.cases()` returns row-matched logical vector with a value of `TRUE` for rows **without** any `NA` values.
+3.  Some functions can ignore `NA` values with the `na.rm = TRUE` parameter: ie `mean()`, `sum()` etc.
+4.  Additional functions in the `tidyr` package can also be used to work with `NA` values.
+
+```{r}
+# Add some NAs to our data frame
+mixed.df <- data.frame(Canadiana = character.vector,
+                      values = c(3, ..., 9),
+                      manmade = logical.vector[1:3],
+                      type = c("Nature", "Nature", "Sport"),
+                      unit = c(NA, "gallons", "Stanley Cups")
+                      )
+# Look at our updated data frame
+mixed.df
+
+# Which entries are NA?
+is.na(mixed.df)
+
+# Which rows are incomplete?
+complete.cases(mixed.df)
+
+# Use some math functions 
+sum(mixed.df$values, ...)
+```
+
+------------------------------------------------------------------------
+
+# 3.0.0 Welcome to the `tidyverse`
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/tidydata_2.jpg?raw=true" width="800"/>
+
+Each dataset has its own problems. Image from: <https://cfss.uchicago.edu/notes/tidy-data/>
+:::
+
+Let's begin with some definitions:
+
+-   **Variable**: A part of an experiment that can be controlled, changed, or measured.
+
+-   **Observation**: The results of measuring the variables of interest in an experiment.
+
+-   **Wide-format data**: variables may be listed in the first column, each forming a row of its own. Observations may be presented as columns that fill observed values for each variable.
+
+-   **Long-format data**: each variable is its own column, and the results of each measured variable are recorded in rows.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/latrines_wide_to_long.png?raw=true" width="800"/>
+:::
+
+In data science, long format is preferred over wide format because it allows for an easier and more efficient subsetting and manipulation of the data. To read more about wide and long formats, visit [here](https://eagereyes.org/basics/spreadsheet-thinking-vs-database-thinking).
+
+**Why tidy data?**
+
+Data cleaning/wrangling (or dealing with 'messy' data) accounts for a huge chunk of a data scientist's time. Ultimately, we want to get our data into a 'tidy' format (long format) where it is easy to manipulate, model and visualize. Having a consistent data structure and tools that work with that standardized data structure can help this process along.
+
+**In Tidy data**:
+
+1.  Each variable forms a column.
+2.  Each observation forms a row.
+3.  Every cell is a *single* value.
+
+This seems pretty straightforward, and it is. It is the datasets you get that will not be straightforward. Having a map of where to take your data is helpful to unraveling its structure and getting it into a usable format.
+
+### 3.0.1 The 5 most common problems with messy datasets are:
+
+-   common headers are values, not variable names
+-   multiple variables are stored in one column
+-   variables are stored in both rows and columns
+-   a single variable stored in multiple tables
+-   multiple types of observational units are stored in the same table
+
+::: {.alert .alert-block .alert-info}
+**Observational units:** Of the three rules, the idea of observational units might be the hardest to grasp. As an example, you may be tracking a puppy population across 4 variables: age, height, weight, fur colour. Each observation unit is a puppy. However, you might be tracking ***the same puppies*** across multiple measurements - so a time factor applies. In that case, the observation unit now becomes puppy-time. Now each puppy-time measurement belongs in a different table (at least by tidy data standards). This, however, is a simple example and things can get more complex when taking into consideration what defines an observational unit. Check out [this blog post by Claus O. Wilke](https://clauswilke.com/blog/2014/07/21/keep-your-data-tidy-part-ii/) for a little more explanation.
+:::
+
+Let's begin this journey with data import.
+
+------------------------------------------------------------------------
+
+## 3.1.0 Opening and saving files with the `readr` package - "All roads lead to Rome.."
+
+***... but not all roads are easy to travel.***
+
+Depending on format, data files can be opened in a number of ways. The simplest methods we will use involve the `readr` package as part of the `tidyverse`. These functions have already been developed to simplify the import process for users. The functions we will use most often are:
+
+-   Read in a delimited file: `read_delim()`, `read_csv()`, `read_tsv()`, `read_csv2()` [European datasets]
+
+-   Read in from a file, line by line: `read_lines()`
+
+Let's read in our first dataset so that we can convert from wide to long format.
+
+```{r}
+# Import the respiratory surveillance data
+respData.df <- read_csv(...)
+
+# What is the basic shape of our data?
+str(...)
+
+# What does it look like
+head(...)
+
+```
+
+------------------------------------------------------------------------
+
+### 3.1.1 The respiratory surveillance data covers multiple viruses
+
+We can see that the respiratory surveillance dataset is 3715 entries across 29 columns. Looking closely at the columns we can see that they are a mix of virus types that come in sets of "Tested" vs "Positive" results. In some cases, there may be multiple variants that are being tested for a single virus type. Case in point, "Flu Tested" is accompanied by "A(H1)pdm09 Positive", "A(H3) Positive", "A(UnS) Positive", "Total Flu A Positive" and "Total Flu B Positive".
+
+Here's a quick table of the kinds of viruses and their coding as we'll see it in our current dataframe.
+
+| Table column code |            Virus            |
+|:-----------------:|:---------------------------:|
+|        ADV        |         Adenovirus          |
+|       EV/RV       |   Enterovirus/Rhinovirus    |
+|        Flu        |          Influenza          |
+|       HCoV        |      Human Coronavirus      |
+|       HPIV        | Human Parainfluenza viruses |
+|       HPMV        |   Human Metapneumoviruses   |
+|        RSV        | Respiratory syncitial virus |
+|    SARS-CoV-2     |     SARS Coronavirus 2      |
+
+We also see that the data begins with some metadata variables: "Season", "Year", "Week", "Surveillance week", and "Reporting Laboratory". Let's begin some exploration of our data by gathering the unique values in those five metadata variables.
+
+```{r}
+# Look at the various values in our first 3 variables
+
+cat("Season values: ")
+respData.df$...
+
+cat("\nYear values: ")
+respData.df$Year %>% unique()
+
+cat("\nUnique Weeks: ")
+respData.df$Week %>% unique()
+
+cat("\nUnique Surveillance Weeks: ")
+respData.df$... %>% unique()
+
+cat("\nUnique Reporting laboratories: ")
+respData.df$`Reporting Laboratory` %>% unique()
+
+# What are the column names of our dataset?
+cat("\ncolumn names: \n")
+colnames(respData.df)
+```
+
+------------------------------------------------------------------------
+
+### 3.1.2 The respiratory surveillance data covers 2 seasons of data gathered across Canada
+
+We can see from the above exploration that our data covers 2 sets of seasons: 2022-2023 and 2023-2024. The week data covers a total of 51 unique weeks, which is pretty much in line with how many weeks we see in the year (52).
+
+If we were to dive into the data a little closer, we'd see that the "Week" and "Surveillance week" don't necessarily match up. Rather, the data for each season, begins at week 35 (year-wise) but the surveillance week would be 0. This will be handy to understand later when we try to visualize our data.
+
+Of the reporting laboratories, it appears that some are specifically totals for each province while others appear to be provincial testing laboratories. It's a little messy but we'll figure out how to clean that up when the time comes.
+
+### 3.1.3 Use coercion to help identify invalid values
+
+Let's take one more cursory look at the data itself. If we were to revisit the output from `str()` we would see that the data in our remaining columns has been classified as "character" data. What values are these columns housing?
+
+We can use coercion to help us investigate our assumptions about the data. From our cursory investigations of the table, the data looks very much like it should be numeric in nature. If we explicitly cast these values to a numeric datatype, R will create `NA` values from the entries that do not appear numeric. We can use this conversion to track down the location of the non-numeric values and identify what they are.
+
+From there we can use a combination of `is.na()` and `which()` to track down the offending values.
+
+```{r}
+# Investigate the values in the virus testing data columns
+
+respData.df %>% 
+  pull(6) %>%             # Pull out just the first data column
+  as.numeric() %>%        # Convert to numeric. Any non-numeric values will become NA
+  is.na() %>%             # Identify which values are NA
+  ... %>%             # Pull down their locations
+  respData.df[., 6] %>%   # Retrieve the non-numeric data from the table 
+  ... %>%            # Convert it to a simple vector for looking at
+  unique()
+
+```
+
+------------------------------------------------------------------------
+
+From our quick investigation, we can see that our non-numeric data consists of either "N.R", "N.R." or "N.C." values. These are placeholders in the dataset where values were either "not recorded" or "not collected" for that period. We will have to deal with that information sooner or later.
+
+## 3.2.0 The `tidyverse` package and it's contents make manipulating data easier
+
+While the tidyverse is composed of multiple packages, we will be focused on working with a subset of these: `dplyr`, `tidyr`, and `stringr`.
+
+### 3.2.0.1 Redirect your output with `%>%` whenever you can!
+
+To save on making extra variables in memory and to help make our code more concise, we should use of the `%>%` symbol. This is a redirection or pipe symbol similar to the `|` in Unix operating systems and is used for redirecting output from one function to the input of another. By thoughtfully combining this with other commands, we can alter or query our datasets with ease.
+
+Whenever we are redirecting, we are implicitly passing our output to the first parameter of the next function. We may not always want to use the entirety of the output or we may want to also reuse that redirected output as part of another parameter. To do so we can use `.` to explicitly denote the redirected output.
+
+::: {.alert .alert-block .alert-success}
+**Native Piping in R:** Note that as of R vs 4.1.0 a native pipe symbol `|>` was added to the language which has the same function as the `%>%` symbol we are using. However, RStudio holds a shortcut set of keys `ctrl + shift + m` which can make it more convenient to insert while coding.
+:::
+
+### 3.2.0.2 `dplyr` has functions for accessing and altering your data
+
+We will use the "verbs" of the `dplyr` function often to massage the look of our data by changing column names or subsetting it. The most common verbs you will see in this course are.
+
+| Function(s) | Description |
+|:---|:---|
+| `arrange()` | Arranging rows by column values |
+| `count()`, `tally()` | Counting observations by group |
+| `distinct()` | Subsetting rows by distinct or unique values |
+| `filter()` | Subsetting rows by column values |
+| `mutate()`, `transmute()` | Create, modify, or delete columns |
+| `select()` | Subset columns using their names and types |
+| `summarize()` or `summarise()` | Summarize by groups to fewer rows |
+| `group_by()` vs. `ungroup()` | group by one or more variables |
+| `rowwise()` | group data as single rows for calculations across each |
+| `rename()`, and `relocate()` | Rename or move columns |
+
+### 3.2.0.3 `tidyr` has additional functions for reshaping our data
+
+The `tidyr` package will be most useful when we are trying to reshape our data from the wide to the long format or *vice versa*. This is much more useful for when we want to drastically alter portions or all of our data.
+
+| Function(s)      | Description                                        |
+|:-----------------|:---------------------------------------------------|
+| `pivot_longer()` | Pivot data from wide to long                       |
+| `pivot_wider()`  | Pivot data from long to wide                       |
+| `extract()`      | Extract a character column into multiple groups    |
+| `separate()`     | Separate a character column into multiple groups   |
+| `unite()`        | Unite multiple columns into one by pasting strings |
+| `drop_na()`      | Drop rows containing missing values                |
+| `replace_na()`   | Replace NAs with specific values                   |
+
+### 3.2.0.4 `stringr` provides functionality for searching data based on regular expressions
+
+The `stringr` package will come in most useful when we are trying to fix string issues with our data. Many time our headers or data will contain spaces or poor formatting. Many times we will prefer to have our headers in lower case format, with any spaces replaced by an `_`. We'll also use verbs from this package to make any variables or data more concise.
+
+| Category | Function(s) | Description |
+|:---|:---|:---|
+| **String analysis** | `str_count()` | Count the number of matches in a string |
+|  |  |  |
+| **String retrieval** | `str_detect()` | Detect the presence (or absence) of a pattern in string |
+|  | `str_extract()` and `str_extract_all()` | Extract matching patterns from a string |
+|  | `str_match()` and `str_match_all()` | Extract matched groups from a string |
+|  | `str_subset()` and `str_which()` | Keep or find strings matching a pattern |
+|  |  |  |
+| **String alteration** | `str_remove()` and `str_remove_all()` | Remove matched patterns from a string |
+|  | `str_split()`, `str_split_fixed()`, and `str_split_n()` | Split a string into pieces |
+|  | `str_c()` | Concatenate multiple strings into a single string with optional separator |
+|  | `str_flatten()` | Flatten a string |
+|  | `str_sub()` | Extract and replace substrings from a character vector |
+|  | `str_to_upper()` and `str_to_lower()` | Convert case of a string |
+
+::: {align="center"}
+<img src="https://github.com/camok/CSB_Course_Materials/blob/main/AdvViz/GoT_Examples_coming.png?raw=true" width="700"/> Time to tackle our dataset!
+:::
+
+------------------------------------------------------------------------
+
+### 3.2.1 Creating a plan for cleaning up our data with tidyverse
+
+Based on what we've seen so far, there are a few things we need to do to get our data into "tidy" format before working with it:
+
+1.  Create some new variables to amalgamate our testing data. This will simplify our test groups by getting rid of excess variables and create a total for things like all of the "Flu"-type positive results.
+
+2.  Convert our data to wide format: All of our "X Tested" and "X Positive" columns represent similar measurements that we'll want to compare. If we create a new variable "Virus" then we can use that to categorize the findings by their Season/Year/Week/Surveillance week/Reporting Laboratory information. The combination of those five variables should be sufficient to create a unique variable for each observation in our long format version.
+
+3.  Separate the "X Tested" from the "X Positive" data.
+
+4.  Fix some of the entries used to identify our samples and remove redundancy in the data.
+
+5.  Filter down our laboratory data to look at just provincial totals for now.
+
+### 3.2.2 Use `mutate_at()` and `mutate()` to create new variables
+
+We have two sets of viruses where multiple strains are being tested:
+
+-   Influenza is being tracked across multiple versions of influenza A and a single influenza B total. A close look at the data suggests we can simply combine the `Total Flu A Positive` and `Total Flu B Positive` variables.
+
+-   Human parainfluenza viruses (HPIV) are being track across 5 categories, which we must consolidate together.
+
+In each case, we'll create an appropriately-matched variable name that will help us down the line by matching with the "Tested" version of virus. To accomplish this we'll use the `mutate()` verb.
+
+*Before that* we'll take a moment to try and type-convert all the measurement columns to numeric values. Much like we saw in **section 3.1.3**, non-numeric values will be converted to `NA` values in the process. We can mutate across multiple columns using the `mutate_at()` verb which will take 2 parameters:
+
+-   `.vars`: a tidy-select definition of the variable names (aka column names) we want to use. This can be chosen in a directly and indirectly by using names or positions.
+-   `.funs`: the *name* of the function we wish to apply to each column we've chosen. In this case it's going to be the `as.numeric` function.
+
+For this and following sections, We'll be using a series of `%>%` so for now we won't save our work to a new object. When we've implemented the whole set of changes, we'll save a final version.
+
+```{r}
+# Start by pivoting the data using the first 5 columns as a unique identifier
+
+respData.df %>%
+  # Convert the measurements to numeric
+  mutate_at(.vars = ..., .funs = ...) %>% 
+  
+  # Create some new "total positive" columns
+  mutate(... = `Total Flu A Positive`+`Total Flu B Positive`,
+         ... = `HPIV 1 Positive` + `HPIV 2 Positive` + `HPIV 3 Positive` + `HPIV 4 Positive` + `Other HPIV Positive`
+         )
+```
+
+------------------------------------------------------------------------
+
+Exploring the output above, we can see that row 59, for example, has `NA` values for week 22 of 2024 but we also see that our measurement variables are indeed listed as `dbl` now.
+
+### 3.2.3 Reformat our wide table with `pivot_longer()`
+
+Our next step in the process should be to try and consolidate all of our virus measurements (Tested and Positive) into a single pair of columns denoting the measurement type (ie "Flu Tested" or "Flu Positive") and the measurement value. To save ourselves some downstream trouble, we'll also take the time to eliminate some of the variables in our dataset that are now redundant. That includes:
+
+1.  All the "Flu XX Positive" columns except specifically the "Flu Positive" variable we created with `mutate()`. These are in positions 9-13 of our dataframe.
+2.  All the "HPIV X Positive" columns except specifically the "HPIV Positive" variable we created with `mutate()`. These are in position 17-21 of our datarame.
+
+We'll remove these offending columns with a quick call to `select()` before we pivot the data.
+
+Next we will use the `pivot_longer()` function to convert our wide-format data over to long-format. For our purposes, we will rely on four parameters:
+
+1.  `data`: the data frame (and columns) that we wish to transform.
+2.  `cols`: the columns that we wish to gather/collapse into a long format.
+3.  `names_to`: the variable name of the *new* column to hold the collapsed information from our current columns.
+4.  `values_to`: The variable name of the values for each observation that we are collapsing down.
+
+```{r}
+# Start by pivoting the data using the first 5 columns as a unique identifier
+
+respData.df %>%
+  # Convert the measurements to numeric
+  mutate_at(.vars = -c(1:5), .funs = as.numeric) %>% 
+  
+  # Create some new "total positive" columns
+  mutate(`Flu Positive` = `Total Flu A Positive`+`Total Flu B Positive`,
+         "HPIV Positive" = `HPIV 1 Positive` + `HPIV 2 Positive` + `HPIV 3 Positive` + `HPIV 4 Positive` + `Other HPIV Positive`
+         ) %>% 
+  
+  # Drop some of the columns from our analysis
+  select(-c(...)) %>% 
+  
+  # Pivot the data using the first 5 variables as a unique id
+  pivot_longer(cols = -c(1:5), names_to = ..., values_to = ...)
+```
+
+------------------------------------------------------------------------
+
+### 3.2.4 Split character data variables using `separate_*`
+
+Looking at our output from above, we now see that our data is in a mostly long format but not yet in a tidy format for our purposes. We've managed to collect all the testing AND result data into the same set of columns: `category` and `count`. Ideally want we want is to add two more variables to our data so that our final table looks more like:
+
+| Season | Year | Week | Surveillance Week | Reporting Laboratory | Category | Tested | Positive | Percent Positive |
+|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| 2023-2024 | 2024 | 23 | 40 | Newfoundland | EV/RV | 19630 | 1844 | 0.0939 |
+| ... | ... | ... | ... | ... | ... | ... | ... | ... |
+
+To accomplish this we'll need to execute a few additional transformations. The next step will need us to break our category data into the "virus" and the "type" of value now. The secondary column will indicate if the data in that observation pertains to "Tested" vs "Positive" counts. To split these values apart from the "category" variable we can turn to a few similar verbs:
+
+-   `separate()`: now mostly deprecated, this simple verb allows you to separate character values into multiple sets (columns) using a text delimiter.
+
+The above has been essentially replaced with more specific versions that have underlying code that relies on the `stringr` packages which is also part of the `tidyverse`.
+
+-   `separate_wider_delim()`: split data into new columns by a delimiter
+-   `separate_wider_position()`: split data into new columns based on fixed widths
+-   `separate_wider_regex()`: split data into new columns based on regular expressions, going beyond a single character delimiter.
+
+Looking carefully at our `category` values, we could identify that each entry takes the form of `<virus> <measurement_type>` with a single space between each or it could be `<virus> Tested` vs `<virus> Positive`. We'll go with the latter route and play with `separate_wider_regex()`.
+
+With `separate_wider_regex()` we can actually provide multiple regular expressions as a named vector to define our column information. This should consolidate the regular expressions as though they were a single one. The named vector will take the form of `c(colName1 = "regExp1", colName2 = "regExp2", ..)`. If an entry in the vector has no name, then it will result in no column being created.
+
+```{r}
+# Start by pivoting the data using the first 5 columns as a unique identifier
+
+respData.df %>%
+  # Convert the measurements to numeric
+  mutate_at(.vars = -c(1:5), .funs = as.numeric) %>% 
+  
+  # Create some new "total positive" columns
+  mutate(`Flu Positive` = `Total Flu A Positive`+`Total Flu B Positive`,
+         "HPIV Positive" = `HPIV 1 Positive` + `HPIV 2 Positive` + `HPIV 3 Positive` + `HPIV 4 Positive` + `Other HPIV Positive`
+         ) %>% 
+  
+  # Drop some of the columns from our analysis
+  select(-c(9:13, 17:21)) %>% 
+  
+  # Pivot the data using the first 5 variables as a unique id
+  pivot_longer(cols = -c(1:5), names_to = "category", values_to = "count") %>% 
+  
+  # Separate out the "Tested" from the "Positive"
+  separate_wider_regex(., cols = category, patterns = ...)
+```
+
+------------------------------------------------------------------------
+
+### 3.2.5 Redistribute the "type" columns using `pivot_wider()`
+
+We've successfully separated our virus category from our measurement type and now we have the `type` variable representing Tested vs Positive counts. What we need, however, is to keep working towards our example in **section 3.2.4** where we have *specific* variables for "Tested" and "Positive" counts.
+
+In order to spread our data back out into multiple columns, we'll use the `pivot_wider()` verb which minimally requires a couple of parameters to work:
+
+-   `names_from`: the column that will be used to sample values as the new column names of your table.
+-   `values_from`: the column that will be used to populate the new columns of your table.
+-   `id_cols`: while optional, this can be used to name the columns that uniquely identify each of your observations, dropping any unnamed variables. If none are listed, then **all remaining columns** will be used by default.
+
+```{r}
+# Start by pivoting the data using the first 5 columns as a unique identifier
+
+respData.df %>%
+  # Convert the measurements to numeric
+  mutate_at(.vars = -c(1:5), .funs = as.numeric) %>% 
+  
+  # Create some new "total positive" columns
+  mutate(`Flu Positive` = `Total Flu A Positive`+`Total Flu B Positive`,
+         "HPIV Positive" = `HPIV 1 Positive` + `HPIV 2 Positive` + `HPIV 3 Positive` + `HPIV 4 Positive` + `Other HPIV Positive`
+         ) %>% 
+  
+  # Drop some of the columns from our analysis
+  select(-c(9:13, 17:21)) %>% 
+  
+  # Pivot the data using the first 5 variables as a unique id
+  pivot_longer(cols = -c(1:5), names_to = "category", values_to = "count") %>% 
+  
+  # Separate out the "Tested" from the "Positive"
+  separate_wider_regex(., cols = category, patterns = c(virus = ".*", " ", type = "Tested|Positive")) %>% 
+  
+  # Bring out the type data into Tested vs Positive columns
+  pivot_wider(names_from = ..., values_from = ...) 
+```
+
+------------------------------------------------------------------------
+
+### 3.2.6 Update/Fix some values with `mutate()` and regular expressions
+
+Nearly there! We just have to fix up some values in our `Reporting Laboratory` variable and we'll create a new variable called `Percent Positive` that uses the data from the newly created `Tested` and `Positive` variables.
+
+In the case of `Reporting Laboratory` we will want to remove "Province of" from some of the values and replace all the instances of "CANADA" with "Canada" for consistency. You can refer to the output in **section 3.1.1** if you'd like to see the values again.
+
+To accomplish our changes, we'll also use the `str_remove_all()` and `str_replace()` functions. In our case we could interchangeably use the `str_remove()` and `str_replace_all()` functions.
+
+```{r}
+# Start by pivoting the data using the first 5 columns as a unique identifier
+
+respData.df %>%
+  # Convert the measurements to numeric
+  mutate_at(.vars = -c(1:5), .funs = as.numeric) %>% 
+  
+  # Create some new "total positive" columns
+  mutate(`Flu Positive` = `Total Flu A Positive`+`Total Flu B Positive`,
+         "HPIV Positive" = `HPIV 1 Positive` + `HPIV 2 Positive` + `HPIV 3 Positive` + `HPIV 4 Positive` + `Other HPIV Positive`
+         ) %>% 
+  
+  # Drop some of the columns from our analysis
+  select(-c(9:13, 17:21)) %>% 
+  
+  # Pivot the data using the first 5 variables as a unique id
+  pivot_longer(cols = -c(1:5), names_to = "category", values_to = "count") %>% 
+  
+  # Separate out the "Tested" from the "Positive"
+  separate_wider_regex(., cols = category, patterns = c(virus = ".*", " ", type = "Tested|Positive")) %>% 
+  
+  # Bring out the type data into Tested vs Positive columns
+  pivot_wider(names_from = type, values_from = count) %>% 
+  
+  # Clean up the Reporting Lab names a little bit to remove redundancy
+  mutate(`Reporting Laboratory` = ...(string = `Reporting Laboratory`, pattern = "..."),
+         `Reporting Laboratory` = ...(string = `Reporting Laboratory`, pattern = "CANADA", replacement = "Canada"),
+         
+         # Create a new variable to calculate % positive cases
+         "Percent Positive" = ...
+         )
+```
+
+------------------------------------------------------------------------
+
+### 3.2.7 Update your variable names with `rename()` for clarity and simplicity
+
+To finish up our wrangling process we'll take a moment to fix up our columns names. "Why should we?" you ask. By renaming the column names to something more consistent, we won't have to keep using additional back-tick notation in our code.
+
+To accomplish our changes we'll make use of the `rename_with()` verb which can utilize a provided function in the `.fn` parameter. We'll use some more `stringr` functions to help with that process. Namely `str_to_title` and `str_remove_all` again.
+
+```{r}
+# Start by pivoting the data using the first 5 columns as a unique identifier
+
+respData.df %>%
+  # Convert the measurements to numeric
+  mutate_at(.vars = -c(1:5), .funs = as.numeric) %>% 
+  
+  # Create some new "total positive" columns
+  mutate(`Flu Positive` = `Total Flu A Positive`+`Total Flu B Positive`,
+         "HPIV Positive" = `HPIV 1 Positive` + `HPIV 2 Positive` + `HPIV 3 Positive` + `HPIV 4 Positive` + `Other HPIV Positive`
+         ) %>% 
+  
+  # Drop some of the columns from our analysis
+  select(-c(9:13, 17:21)) %>% 
+  
+  # Pivot the data using the first 5 variables as a unique id
+  pivot_longer(cols = -c(1:5), names_to = "category", values_to = "count") %>% 
+  
+  # Separate out the "Tested" from the "Positive"
+  separate_wider_regex(., cols = category, patterns = c(virus = ".*", " ", type = "Tested|Positive")) %>% 
+  
+  # Bring out the type data into Tested vs Positive columns
+  pivot_wider(names_from = type, values_from = count) %>% 
+  
+  # Clean up the Reporting Lab names a little bit to remove redundancy
+  mutate(`Reporting Laboratory` = str_remove_all(string = `Reporting Laboratory`, pattern = "[Pp]rovince of "),
+         `Reporting Laboratory` = str_replace(string = `Reporting Laboratory`, pattern = "CANADA", replacement = "Canada"),
+         "Percent Positive" = Positive/Tested*100
+         ) %>% 
+  
+  # Rename the variable names a bit to all begin with upper case
+  rename_with(., .fn = ...) %>% 
+  rename_with(., .fn = function(x) ...)
+
+```
+
+------------------------------------------------------------------------
+
+### 3.2.8 Reorder your columns with `relocate()`
+
+The last cleanup we want to accomplish is to move `ReportingLaboratory` to the start of our data frame. We'll try using a new verb, `relocate()` to accomplish this feat.
+
+The `relocate()` verb from `dplyr` preforms this step with ease since we are not dropping or removing columns. It uses some extra syntax to help accomplish its functions:
+
+1.  `.data`: the data frame or tibble we want to alter
+2.  `...`: the columns we wish to move
+3.  `.before` or `.after`: determines the destination of the columns. Supplying neither will move columns to the left-hand side.
+
+In fact, `relocate()` can be used to rename a column as well but it will also be moved by default so consider the ramifications of such an action!
+
+**Note:** We could accomplish a similar result using the `select()` command as well. It's really up to what you're comfortable with but it is much simpler to use `relocate()` when you are working with a large number of columns and you want to move one to a specific location.
+
+We'll save our final long-format dataframe into a new variable `respData_long.df` where we can work with it further as needed.
+
+```{r}
+# Start by pivoting the data using the first 5 columns as a unique identifier
+
+respData_long.df <-
+  respData.df %>%
+  # Convert the measurements to numeric
+  mutate_at(.vars = -c(1:5), .funs = as.numeric) %>% 
+  
+  # Create some new "total positive" columns
+  mutate(`Flu Positive` = `Total Flu A Positive`+`Total Flu B Positive`,
+         "HPIV Positive" = `HPIV 1 Positive` + `HPIV 2 Positive` + `HPIV 3 Positive` + `HPIV 4 Positive` + `Other HPIV Positive`
+         ) %>% 
+  
+  # Drop some of the columns from our analysis
+  select(-c(9:13, 17:21)) %>% 
+  
+  # Pivot the data using the first 5 variables as a unique id
+  pivot_longer(cols = -c(1:5), names_to = "category", values_to = "count") %>% 
+  
+  # Separate out the "Tested" from the "Positive"
+  separate_wider_regex(., cols = category, patterns = c(virus = ".*", " ", type = "Tested|Positive")) %>% 
+  
+  # Bring out the type data into Tested vs Positive columns
+  pivot_wider(names_from = type, values_from = count) %>% 
+  
+  # Clean up the Reporting Lab names a little bit to remove redundancy
+  mutate(`Reporting Laboratory` = str_remove_all(string = `Reporting Laboratory`, pattern = "[Pp]rovince of "),
+         `Reporting Laboratory` = str_replace(string = `Reporting Laboratory`, pattern = "CANADA", replacement = "Canada"),
+         "Percent Positive" = Positive/Tested*100  # What happens if we divide by 0?
+         ) %>% 
+  
+  # Rename the variable names a bit to all begin with upper case
+  rename_with(., .fn = str_to_title) %>% 
+  rename_with(., .fn = ~ str_remove_all(string = .x, pattern = "\\s")) %>% 
+  
+  # Move the Reporting Lab column to the start
+  relocate(...)
+
+# Take a look at the final result
+head(respData_long.df, 20)
+
+# Make a quick copy of our long dataframe
+respData_long_copy.df <- respData_long.df
+
+```
+
+------------------------------------------------------------------------
+
+::: {.alert .alert-block .alert-danger}
+**Comprehension Question 3.2.9:** In the above example we used the **relocate()** function to move the "ReportingLaboratory" column to the start of our data frame. What other methods could we use to accomplish the same feat? Use the below code cell to help yourself out.
+:::
+
+```{r, error=TRUE}
+# comprehension answer code 3.2.9
+# Relocate our target column using the select() command
+
+# Use this copy of the sunshine list 
+respData_long_copy.df %>% 
+
+  # relocate "salary" and "taxableBenefits" to the right of "numericID"
+  ... %>% 
+
+  head()
+```
+
+------------------------------------------------------------------------
+
+## 3.3.0 Save your data to a file - "Country roads... save to home!"
+
+At this point we have completed the data wrangling we want to accomplish on this dataset. We've converted it to a long-format and successfully calculated the % positive values for each virus test. There are a number of ways we could save this data now either as a text file or in its current form as a data frame in a **.RData** format.
+
+-   Write out to a delimited file: `write_delim()`, `write_csv()`, `write_tsv()`, `write_excel_csv()`
+-   Write out to a file, line by line: `write_lines()`
+-   Save an object to a .Rdata file: `save()`
+-   Load an object from a .Rdata file: `load()`
+
+Let's try some of those methods now.
+
+```{r}
+# Check the files names we currently have
+print(dir("./data/"))
+```
+
+```{r}
+# Write respData_long.df to a tab-delimited file
+...(respData_long.df, file = "./data/respSurveillance_long.tsv")
+
+# Check our file names after writing
+print(dir("./data/"))
+```
+
+```{r}
+# Save our data frame as an object
+...(respData_long.df, file="./data/respSurveillance_long.RData")
+
+# Check our file names after saving
+print(dir("./data/"))
+```
+
+------------------------------------------------------------------------
+
+### 3.3.0.1 `readxl` and `writexl` packages for working with excel spreadsheets
+
+Not all of your data may come as a comma- or tab-delimited format. In the case of excel spreadsheets there are some packages available that can also facilitate the parsing of these more complex files. The `readxl` package is part of the `tidyverse` but `writexl` package is not. There are other means of writing to an excel file format but they are dependent on other programs (like Java or Excel) or their drivers.
+
+From the `readxl` package
+
+-   Get a list of sheet names from a file: `excel_sheets()`
+-   Read in an excel sheet: `read_excel()`
+
+From the `writexl` package (not a part of the tidyverse) but independent of Java and Excel
+
+-   Write out to xlsx format: `write_xlsx()`
+-   Can write a list of objects to separate sheets but cannot append to pre-existing files.
+
+We won't work with any spreadsheets today but it's good to know these options exist!
+
+------------------------------------------------------------------------
+
+# 4.0.0 Exploratory data analysis through summary and plotting
+
+We now have our data in a tidy format - every row is an observation and every column is a variable. While we only have a few numeric data points that are available for summary, we can actually generate quite a few bits of summary information. We'll do this initially using data summary tables by generating grouped data frames.
+
+## 4.1.0 Use `group_by()` to implicitly subset your data
+
+The simplest way to subset your data for analysis is with the `group_by()` verb. You can specify which variables you'd like to use and it will automatically generate any pre-existing groups that meet your criteria. While it is not necessary for the variables you want to subgroup by to be `factor` datatypes, it can simplify things since you can quickly calculate how many maximum combinations might exist.
+
+Once the data is grouped, we can use `summarise()` to create basic summaries on some of the variables. To help us focus, we'll try to answer a few simple questions:
+
+1.  What was the total number of tests per season across each Province for each of the two seasons? What is the range for the totals? What was the average across provinces per season?
+2.  Within each season and Province, which virus was tested for the most?
+3.  Which province(s) in the past two seasons had the highest mean percent positivity across all viruses combined?
+
+### 4.1.1 What was the total number of tests per season across each Province for the two seasons? What is the range for the totals? What was the average across provinces per season?
+
+We can approach this question by recognizing that we want to group our data along some of our variables. We are looking for a summary based on season AND province. We are interested in calculating the number of total tests performed on a weekly basis.
+
+To break our analysis into steps we would:
+
+1.  Group by Season AND Reporting Laboratory
+2.  Calculate sum total tests.
+3.  Sort the output to quickly assess the range.
+
+```{r}
+# Begin by making a list of provinces. We'll re-use this at a later time
+provinceList = c("British Columbia", "Alberta", "Saskatchewan", "Manitoba",
+                   "Ontario", "Quebec", "New Brunswick", "Nova Scotia", "Newfoundland", "Prince Edward Island",
+                   "Yukon", "Northwest Territories", "Nunavut")
+
+# Pass the data
+respData_long.df %>%
+  # Filter for just the provincial totals
+  filter(...) %>% 
+  # Group the data by season and reporting lab
+  group_by(...) %>% 
+  # Summarize the total number of tests 
+  summarise(totalTests = ...) %>% 
+  # Sort the data in ascending order
+  arrange(...)
+  
+```
+
+------------------------------------------------------------------------
+
+So on a seasonal basis, we can see that thousands to *millions* of tests are performed across the provinces. Let's answer part three of the question by determining the mean across provinces for each season. At the same time, we can calculate the standard deviation as well. In order to do that, we must collapse the above output by regrouping based on just the `Season` variable and then calculating the mean!
+
+```{r}
+# Pass the data
+respData_long.df %>%
+  # Filter for just the provincial totals
+  filter(ReportingLaboratory %in% provinceList) %>% 
+  # Group the data by season and reporting lab
+  group_by(ReportingLaboratory, Season) %>% 
+  
+  # Summarize the total number of tests 
+  summarise(totalTests = sum(Tested, na.rm = TRUE)) %>% 
+
+  # Regroup the data by season only
+  group_by(...) %>% 
+  summarise(meanTests = mean(...),
+            sdTests = sd(...))
+  
+```
+
+As was confirmed by looking at the range of our data in part one of this question, we can see that the average total tests has a wide distribution and this is confirmed by the large standard deviations per season. We can also see that overall testing increased between the 2022-23 season versus the 2023-24 season. There are, of course factors we haven't normalized for such as population sizes for each individual province as the number of tests may scale with these values.
+
+------------------------------------------------------------------------
+
+### 4.1.2 Within each season and Province Which virus was tested for the most?
+
+The first part of our question is a variation on the previous line of questioning. We just need to identify the maximum total tested values but *also* the **index** of those maximum values. We already know of the `max()` function which will return the first occurrence of a maximum value in a group of values. The `which.max()` function will return the **index** of the first maximum value occurrence in your dataset.
+
+We can use this to re-index the data and retrieve information from that row like the `Virus` information! Just remember that we can use the `.` character to represent the input data and the `[ ]` indexing operators to retrieve portions of a dataframe.
+
+```{r}
+# Pass the data
+respData_long.df %>%
+  # Filter for just the provincial totals
+  filter(ReportingLaboratory %in% provinceList) %>% 
+  # Group the data by season and reporting lab AND virus
+  group_by(ReportingLaboratory, Season, Virus) %>% 
+  # Summarize the total number of tests 
+  summarise(totalTests = sum(Tested, na.rm = TRUE)) %>% 
+
+  # Regroup the data by lab and season
+  group_by(ReportingLaboratory, Season) %>% 
+  
+  # Summarize the data for maximum value
+  summarise(maxTested = ...,
+            # Use which.max to index the max value 
+            maxTestedVirus = ...
+            )
+```
+
+------------------------------------------------------------------------
+
+### 4.1.3 Which province(s) in the past two seasons had the highest mean weekly percent positivity across all viruses combined?
+
+What are we trying to get at with this question? Basically, we are asking how "sick" the population was on a weekly basis and taking the average of that. In this final question, we'll combine "Tested" and "Positive" values as a means to gauge the general illness of the population. To accomplish this, we'll make some heavy assumptions about the data:
+
+1.  Observations will be considered independent. While we can't know for certain its actually likely in many cases that a single patient is being tested on a panel of viruses. Looking at the data, this will definitely not always be the case.
+
+2.  We assume that once a patient is identified as positive for one virus, they will not be identified as positive for any others. Again, a very broad and perhaps not accurate assumption but likely for the majority of cases
+
+Our goal therefore will be to simply calculate the sum total percent positivity each week for each province, and then calculate the mean of that across a season. We'll collect some additional values along the way.
+
+```{r}
+# Pass the data
+respData_long.df %>%
+  # Filter for just the provincial totals
+  filter(ReportingLaboratory %in% provinceList) %>% 
+  # Group the data by season and reporting lab AND virus
+  group_by(ReportingLaboratory, Season, Week) %>% 
+  # Summarize the total number of tests 
+  summarise(totalTests = sum(Tested, na.rm = TRUE),
+            totalPositives = sum(Positive, na.rm = TRUE),
+            totalPositivity = sum(Positive, na.rm = TRUE)/sum(Tested, na.rm = TRUE)) %>% 
+
+  # Regroup the data by season and Lab - order here matters!
+  # What happens if we group by Reporting lab and then Season?
+  group_by(Season, ReportingLaboratory) %>%
+
+  # Summarize the data for mean value
+  summarise(meanWeeklyPositivity = mean(totalPositivity, na.rm = TRUE),
+            sdWeeklyPositivity = sd(totalPositivity, na.rm = TRUE)
+            ) %>% 
+
+  # We could stop above and look at the output OR we can regroup a THIRD time just by season
+  group_by(Season) %>%
+
+  # Identify the maximum values and whom they belong to
+  summarise(maxPositivity = max(meanWeeklyPositivity),
+            maxProvince = .[which.max(meanWeeklyPositivity),]$ReportingLaboratory,
+            maxProvinceIndex = which.max(meanWeeklyPositivity)
+            )
+  
+```
+
+It looks like from our data, that the Northwest Territories and Nova Scotia had the highest mean weekly positivity amongst our dataset in 2022-23 and 2023-24 respectively. What would your interpretation be for this result? Would you need more information to make any meaningful conclusions?
+
+It's important to note that in our second `group_by()` statement, we grouped *first* by `Season` and *second* by `ReportingLaboratory`. If we were to switch the grouping order at that point, we actually end up with a different (and incorrect) result due to some glitch in how the index position is calculated. We can confirm this in the following sets of code where we look at the summary of the "meanWeeklyPositivity" and then rerun the code by flipping the order of the `group_by` parameters.
+
+```{r}
+# Pass the data
+respData_long.df %>%
+  # Filter for just the provincial totals
+  filter(ReportingLaboratory %in% provinceList) %>% 
+  # Group the data by season and reporting lab AND virus
+  group_by(ReportingLaboratory, Season, Week) %>% 
+  # Summarize the total number of tests 
+  summarise(totalTests = sum(Tested, na.rm = TRUE),
+            totalPositives = sum(Positive, na.rm = TRUE),
+            totalPositivity = sum(Positive, na.rm = TRUE)/sum(Tested, na.rm = TRUE)) %>% 
+
+  # Regroup the data by season and Lab - order here matters!
+  # What happens if we group by Reporting lab and then Season?
+  group_by(...) %>% 
+  
+  # Summarize the data for mean value
+  summarise(meanWeeklyPositivity = mean(totalPositivity, na.rm = TRUE),
+            sdWeeklyPositivity = sd(totalPositivity, na.rm = TRUE)
+            ) %>% 
+
+  group_by(Season)
+
+### Version 2 of the summary
+# Pass the data
+respData_long.df %>%
+  # Filter for just the provincial totals
+  filter(ReportingLaboratory %in% provinceList) %>% 
+  # Group the data by season and reporting lab AND virus
+  group_by(ReportingLaboratory, Season, Week) %>% 
+  # Summarize the total number of tests 
+  summarise(totalTests = sum(Tested, na.rm = TRUE),
+            totalPositives = sum(Positive, na.rm = TRUE),
+            totalPositivity = sum(Positive, na.rm = TRUE)/sum(Tested, na.rm = TRUE)) %>% 
+
+  # Regroup the data by Lab and season - order here matters!
+  # What happens if we group by Reporting lab and then Season?
+  group_by(...) %>% 
+  
+  # Summarize the data for mean value
+  summarise(meanWeeklyPositivity = mean(totalPositivity, na.rm = TRUE),
+            sdWeeklyPositivity = sd(totalPositivity, na.rm = TRUE)
+            ) %>% 
+  
+  # We could stop above and look at the output OR we can regroup a THIRD time just by season
+  group_by(Season)  
+
+```
+
+------------------------------------------------------------------------
+
+A little investigation into this series of code shows us that the **structure and order** of the dataframe from the **previous** (second) `group_by()` step is maintained even though the indexed positions are a reflection of the *newly grouped data* in the 3rd `group_by()` call.
+
+Overall, however, with careful grouping, we can identify quite a bit of summary information from this large dataset.
+
+## 4.2.0 Simple graphical analysis of data with `ggplot2`
+
+While we were able to quickly obtain some cursory information using a `group_by()` and `summarize()` approach, it can be hard to rifle through the rows and rows of observations in our data. We went to all that trouble to put our data into a tidy format, not just for summary but also for ease of visualization! While we will go into ggplot2 in much greater depth during **lectures 2 and 3**, let's begin our journey now with a little bit of the basics.
+
+We can begin with some initial analyses of the data using the `ggplot2` package. It has all of the components we need to help us decide on which data we want to focus on or keep. There are a number of ways to visualize our data and here we will refresh our `ggplot` skills.
+
+Basic ggplot notes:
+
+-   `ggplot` objects hold a complex number of attributes but always need an initial source of data
+-   `ggplot` objects can be modified with the `+` symbol by adding in layers
+    -   layers can alter attributes such as which data is displayed and how.
+    -   Most layers can be modified in one way or another.
+-   `ggplot` objects can be plotted, saved, and passed around.
+
+We'll continue to work with a trimmed down dataset where we will filter for just provincial totals in our data. That's right, it's easy to filter your data on-the-fly before passing it on to ggplot!
+
+::: {.alert .alert-block .alert-info}
+As we start to produce plot figures, they'll vary in size depending on your needs. In an R Markdown code cell, you can set your figure size using the code cell attributes much like the parameters of a function. You can set the figure size dimensions using **fig.width** and **fig.height**. As we proceed in the future, you'll see us setting these attributes within our code cells.
+:::
+
+Let's begin by creating a simple `ggplot` object and reviewing its structure. We'll limit our data again to looking at testing from the 2022-2023 season and just the provincial total info.
+
+```{r}
+respData.plot <-
+  # Pass the original data
+  respData_long.df %>% 
+  # Filter for the provincial totals
+  filter(ReportingLaboratory %in% provinceList,
+         Season == "2022-2023"
+         ) %>% 
+  # Group data by season, lab, and week
+  group_by(Season, ReportingLaboratory, SurveillanceWeek) %>% 
+  # Determine the number of tests completed weekly
+  summarise(totalTests = sum(Tested, na.rm = TRUE),
+            meanTests = mean(Tested, na.rm = TRUE)) %>% 
+  # Create a ggplot object
+  ...
+
+# Take a look at the resulting object
+str(respData.plot)
+```
+
+------------------------------------------------------------------------
+
+Let's take a quick look at the output of our ggplot object
+
+```{r}
+respData.plot
+```
+
+------------------------------------------------------------------------
+
+## 4.2.1 Make a line graph of mean salary for each sector across our time period
+
+We now have a basic plot object initialized but it's just a blank canvas. We need to tell the plot how to display the data associated with it. We'll begin with a simple line graph of mean salary for all sectors across all dates within the set.
+
+In order to update or add layers to a `ggplot` object, we can use the `+` symbol for each command. For instance, to define the source of x-axis and y-axis data, we use `aes()` command to update the aesthetics layer.
+
+Remember how we defined the `sector` variable as a factor? We'll take advantage of that here and tell `ggplot` to give each sector its own colour.
+
+After defining our aesthetics, we still need to tell `ggplot` how to actually graph the data. The `ggplot` package comes with an abundance of visualizations accessed through the `geom_*()` commands. Some examples include
+
+-   `geom_point()` for scatterplots
+-   `geom_line()` for line graphs
+-   `geom_boxplot()` for boxplots
+-   `geom_violin()` for violin plots
+-   `geom_bar()` for bargraphs
+-   `geom_histogram()` for histograms
+
+```{r}
+respData.plot +
+  
+    # 2. Aesthetics
+    aes(x = ..., y = ..., colour = ...) +
+    theme(text = element_text(size = 20)) + # set text size
+  
+    # Give titles to your axes
+    guides(colour = guide_legend(title="Province")) + # Legend title
+    xlab("Week") + # Set the x-axis label
+    ylab("Total Tests") + # Set the y-axis label
+
+    # 4. Geoms
+    ...
+```
+
+------------------------------------------------------------------------
+
+## 4.2.2 Use the `facet_wrap()` command to break Provinces into separate graphs
+
+There's a lot of data on that graph and some of it is quite drowned out because of the scale of some provinces with much higher test values. To break out each province individually, we can add the `facet_wrap()` command. We'll also update some of the parameters:
+
+-   `scale`: we will update this so each y-axis scale is determined by province-specific data.
+-   `ncol`: use this to set the number of columns displayed in our grid
+
+At the same time, we'll also get rid of the legend since each individual graph will be labeled by its province.
+
+```{r, fig.width=18, fig.height=15}
+# This is going to be a big graph so adjust our plot window sizes in the above code cell definition
+
+# Add a facet_wrap and get rid of the legend
+respData_facet.plot <- respData.plot +
+  
+  # 2. Aesthetics
+  aes(x = SurveillanceWeek, y = totalTests, colour = ReportingLaboratory) +
+  theme(text = element_text(size = 20)) + # set text size
+  theme(legend.position = "none") +       # Remove the legend
+
+  # Give titles to your axes
+  xlab("Week") + # Set the x-axis label
+  ylab("Total Tests") + # Set the y-axis label
+
+  # 4. Geoms
+  geom_line() +
+  
+  # 7. ### 4.2.2 Facet our data by province
+  facet_wrap(..., scales = "free_y", ncol=4)
+
+# Display our plot
+respData_facet.plot
+```
+
+------------------------------------------------------------------------
+
+## 4.3.0 Use the `ggsave()` command to save your plots to a file
+
+There are a number of ways you can use the `ggsave()` command to specify how you want to save your files.
+
+```{r}
+# What is our working directory?
+getwd()
+
+# Save the plot we've generated to the root directory of the lecture files.
+ggsave(plot = ..., 
+       filename = "data/respiratorySurveillance_linePlot_facet.png", 
+       scale=2, 
+       device = "png", 
+       units = c("cm"), width = 24, height = 20)
+
+# Take a look at the directory
+dir("data/")
+```
+
+------------------------------------------------------------------------
+
+## 4.4.0 Barplots can be used to summarize your seasonal totals across provinces
+
+Although we do have a running total for each week, what if we want to look at the totals tests in a season across our provinces? Using a barplot we can stack provinces by year and get a sense of yearly total tests by province. This hearkens back to one of our earlier questions where we asked in section 4.1.1 which looked at the total tests per province per season.
+
+This time we will use `geom_bar()` to display our long-format data and tell it to use the values from our `Tested` variable to generate the seasonal totals. We do this by setting the `stat = "identity"` parameter. What's nice is there is no need to even use our summary data since ggplot will virtually summarize the information for us!
+
+```{r, fig.width=20, fig.height=10}
+# Pass the original data
+respData_long.df %>% 
+  # Filter for the provincial totals
+  filter(ReportingLaboratory %in% provinceList,
+         Season == "2022-2023"
+         ) %>% 
+  
+  ggplot() +
+
+
+  # 2. Aesthetics
+  aes(x = ReportingLaboratory, y = Tested, fill = ReportingLaboratory) +
+  theme(text = element_text(size = 20)) + # set text size
+  theme(legend.position = "none") +       # Remove the legend
+
+  # Give titles to your axes
+  xlab("Province") + # Set the x-axis label
+  ylab("Total Tests Yearly") + # Set the y-axis label
+
+  # 4. Geoms
+  ...
+  
+```
+
+Looks like our number of tests per season, on a provincial level is definitely the highest in Ontario. Of course that doesn't tells us much about the number of positive tests or percent positivity, which may be more similar between provinces! Perhaps we'll leave that for next week to explore. Going back to our first question in **section 4.1.1**, we can now see just how different the provinces are between each other.
+
+We also haven't accounted for provincial populations either but we'll have more time to explore that in later lectures!
+
+### 4.4.1 Change your data by updating your axis variables!
+
+Returning back to our visualization, we can quick switch our question to look at how many total positive tests we see across a season. All we need to do is update the x-axis variable to "Positive" instead!
+
+```{r, fig.width=20, fig.height=10}
+# Pass the original data
+respData_long.df %>% 
+  # Filter for the provincial totals
+  filter(ReportingLaboratory %in% provinceList,
+         Season == "2022-2023"
+         ) %>% 
+  
+  ggplot() +
+
+
+  # 2. Aesthetics
+  aes(x = ReportingLaboratory, y = ..., fill = ReportingLaboratory) +
+  theme(text = element_text(size = 20)) + # set text size
+  theme(legend.position = "none") +       # Remove the legend
+
+  # Give titles to your axes
+  xlab("Province") + # Set the x-axis label
+  ylab("Total Positive Tests Yearly") + # Set the y-axis label
+
+  # 4. Geoms
+  geom_bar(stat = "identity")
+  
+```
+
+Having switched to looking at "Positive" results, we see the total values between provinces share a relatively similar shape to the total tests. There are some slight differences but overall there is a similarity.
+
+------------------------------------------------------------------------
+
+### 4.4.2 View individual datapoints with `geom_point()`
+
+Before we wrap up, let's take a closer look at our data by zooming in on percent positive values. We'll filter our data to look at data from the 2022-2023 season and then plot all of the percent positive values as single datapoints, categorized by province.
+
+Using the `geom_point()` layer, we'll be able to plot each observation in our dataset. The resulting visualization would be considered a strip-plot rather than a standard scatterplot or biplot.
+
+Note that we are also accessing the `theme()` layer here to adjust parts of our plot. We'll spend most of **lecture 03** learning to manipulate many of our smaller details. For now, we'll adjust our x-axis text so it is at a 45-degree angle.
+
+```{r, fig.width=10, fig.height=6}
+
+respData_long.df %>% 
+  # Filter the data and be sure to remove NA values that might come from dividing by 0
+  filter(ReportingLaboratory %in% provinceList,
+         Season == "2022-2023",
+         !is.na(PercentPositive)) %>%
+  
+  ggplot() +
+  
+  # Aesthetics
+  aes(x = ReportingLaboratory, y = PercentPositive, colour = Virus) +
+  
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) + # rotate our x-axis text
+  
+  xlab("Province") +
+  ylab("Weekly percent positive") +
+  ggtitle("Weekly percent positivity across the 2022-2023 season") +
+  
+  ...
+
+```
+
+Despite the high number of tests in Ontario, the percent positivity remains low across most of the viruses tested! Could this be a sign of over-testing within the province? This could also be an indicator of the difference between protocols on which samples from patients actually require testing within each province. Check out that single data point for PEI at 100% positivity for EV/RV. How many tests were completed that week?
+
+There are quite a few additional ways we could improve this visualization to answer some of our above questions and we'll cover those steps in the coming weeks.
+
+------------------------------------------------------------------------
+
+# 5.0.0 Class summary
+
+That's our first class! If we've made it this far, we've reviewed
+
+1.  Foundational concepts in R
+2.  Helpful functions in generating tidy data for analysis
+3.  Basics of visualizations using the `ggplot2`
+
+We took a "messy" dataset from the Canadian federal government and created a tidy data set that we were able to visualize. We also took the time to summarize our data based on specific groups to get a better picture of how virus testing was performed across single seasons of surveillance.
+
+Next week? Getting deeper into `ggplot2`!
+
+------------------------------------------------------------------------
+
+## 5.1.0 Weekly assignment
+
+This week's assignment will be found under the current lecture folder under the "assignment" subfolder. It will include an R markdown notebook that you will use to produce the code and answers for this week's assignment. Please provide answers in markdown or code cells that immediately follow each question section.
+
+|   | Assignment breakdown |   |
+|:--:|:--:|:---|
+| Code | 50% | \- Does it follow best practices? |
+|  |  | \- Does it make good use of available packages? |
+|  |  | \- Was data prepared properly |
+| Answers and Output | 50% | \- Is output based on the correct dataset? |
+|  |  | \- Are groupings appropriate |
+|  |  | \- Are correct titles/axes/legends correct? |
+|  |  | \- Is interpretation of the graphs correct? |
+
+Since coding styles and solutions can differ, students are encouraged to use best practices. Assignments *may* be rewarded for well-coded or elegant solutions.
+
+You can save and download the markdown notebook in its native format. Submit this file to the the appropriate assignment section by 9:59 am on the date of our next class: March 9th, 2026.
+
+------------------------------------------------------------------------
+
+## 5.2.0 Acknowledgements
+
+**Revision 1.0.0**: created and prepared for **CSB1021H S LEC0141**, 03-2021 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+**Revision 1.0.1**: edited and prepared for **CSB1020H S LEC0141**, 03-2022 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+**Revision 1.0.2**: edited and prepared for **CSB1020H S LEC0141**, 03-2023 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+**Revision 2.0.0**: Revised and prepared for **CSB1020H S LEC0141**, 03-2024 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+**Revision 3.0.0**: Revised and prepared for **CSB1020H S LEC0141**, 03-2025 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+**Revision 4.0.0**: Revised and prepared for **CSB1020H S LEC0141**, 03-2026 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+------------------------------------------------------------------------
+
+## 5.3.0 References
+
+1.  Coercion from "R in a Nutshell": <https://www.oreilly.com/library/view/r-in-a/9781449358204/ch05s08.html>
+2.  Tibbles vs data frames from "RStudio blog": <https://blog.rstudio.com/2016/03/24/tibble-1-0-0/>
+3.  Indexing elements from a vector or list: <https://cran.r-project.org/doc/manuals/R-lang.html#Indexing>
+4.  Change the levels of a factor: <http://www.cookbook-r.com/Manipulating_data/Changing_the_order_of_levels_of_a_factor/>
+5.  The apply family of functions: <https://www.r-bloggers.com/2015/07/r-tutorial-on-the-apply-family-of-functions/>
+6.  Tidy data principles: <https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html>
+7.  Using the `lubridate` package: <https://r4ds.had.co.nz/dates-and-times.html>
+
+------------------------------------------------------------------------
+
+# 6.0.0 Appendix 1: Instructions for installing your own software
+
+## 6.1.0 R and RStudio
+
+### 6.1.1 Installing R
+
+As of 2025-03-01, the latest stable R version is 4.4.3:
+
+Windows:\
+- Go to <http://cran.utstat.utoronto.ca/>\
+- Click on 'Download R for Windows'\
+- Click on 'install R for the first time'\
+- Click on 'Download R 4.4.3 for Windows' (or a newer version)\
+- Double-click on the .exe file once it has downloaded and follow the instructions.
+
+(Mac) OS X:\
+- Go to <http://cran.utstat.utoronto.ca/>\
+- Click on 'Download R for (Mac) OS X'\
+- Click on R-4.4.3 .pkg (or a newer version)\
+- Open the .pkg file once it has downloaded and follow the instructions.
+
+------------------------------------------------------------------------
+
+Linux:\
+- Open a terminal (Ctrl + alt + t) - sudo apt-get update\
+- sudo apt-get install r-base\
+- sudo apt-get install r-base-dev (so you can compile packages from source)
+
+------------------------------------------------------------------------
+
+### 6.1.2 Installing RStudio
+
+As of 2025-03-05, the latest RStudio version is 2024.12.1+563 (released 2025-02-13)
+
+Windows (10/11):\
+- Go to <https://posit.co/downloads/>\
+- Click on 'RSTUDIO-2024.12.1-563.EXE' to download the installer (or a newer version)\
+- Double-click on the .exe file once it has downloaded and follow the instructions.
+
+(Mac) OS X (11+):\
+- Go to <https://posit.co/downloads/>\
+- Click on 'RSTUDIO-2024.12.1-563.DMG' to download the installer (or a newer version)\
+- Double-click on the .dmg file once it has downloaded and follow the instructions.
+
+------------------------------------------------------------------------
+
+Linux:\
+- Go to <https://posit.co/downloads/>\
+- Click on the installer that describes your Linux distribution, e.g. 'RSTUDIO-2022.12.0-353-AMD64.DEB' (or a newer version)\
+- Double-click on the .deb file once it has downloaded and follow the instructions.\
+- If double-clicking on your .deb file did not open the software manager, open the terminal (Ctrl + alt + t) and type **sudo dpkg -i /path/to/installer/RSTUDIO-2024.12.1-563-AMD64.deb**
+
+```         
+ _Note: You have 3 things that could change in this last command._     
+ 1. This assumes you have just opened the terminal and are in your home directory. (If not, you have to modify your path. You can get to your home directory by typing cd ~.)     
+ 2. This assumes you have downloaded the .deb file to Downloads. (If you downloaded the file somewhere else, you have to change the path to the file, or download the .deb file to Downloads).      
+ 3. This assumes your file name for .deb is the same as above. (Put the name matching the .deb file you downloaded).
+```
+
+If you have a problem with installing R or RStudio, you can also try to solve the problem yourself by Googling any error messages you get. You can also try to get in touch with me or the course TAs.
+
+------------------------------------------------------------------------
+
+### 6.1.3 Getting to know the RStudio environment
+
+RStudio is an IDE (Integrated Development Environment) for R that provides a more user-friendly experience than using R in a terminal setting. It has 4 main areas or panes, which you can customize to some extent under `Tools > Global Options > Pane Layout`:
+
+1.  **Source** - The code you are annotating and keeping in your script.
+2.  **Console** - Where your code is executed.
+3.  **Environment** - What global objects you have created and functions you have written/sourced.\
+    History - A record of all the code you have executed in the console.\
+    Connections - Which data sources you are connecting to. (Not being used in this course.)
+4.  **Files, Plots, Packages, Help, Viewer** - self-explanatoryish if you click on their tabs.
+
+All of the panes can be minimized or maximized using the large and small box outlines in the top right of each pane.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/R_studio_default_layout.jpg?raw=true" width="700"/>
+:::
+
+### 6.1.3.1 Source
+
+The **Source** is where you are keeping the code and annotation that you want to be saved as your script. The tab at the top left of the pane has your script name (i.e. 'Untitled.R'), and you can switch between scripts by toggling the tabs. You can save, search or publish your source code using the buttons along the pane header. Code in the Source pane is *run* or *executed* automatically.
+
+To run your current line of code or a highlighted segment of code from the Source pane you can:\
+a) click the button `'Run' -> 'Run Selected Line(s)'`,\
+b) click `'Code' -> 'Run Selected Line(s)'` from the menu bar,\
+c) use the keyboard shortcut `CTRL + ENTER` (Windows & Linux) `Command + ENTER` (Mac) (recommended),\
+d) copy and paste your code into the Console and hit `Enter` (not recommended).
+
+There are always many ways to do things in R, but the fastest way will always be the option that keeps your hands on the keyboard.
+
+### 6.1.3.2 Console
+
+You can also type and execute your code (by hitting `ENTER`) in the **Console** when the `>` prompt is visible. If you enter code and you see a `+` instead of a prompt, R doesn't think you are finished entering code (i.e. you might be missing a bracket). If this isn't immediately fixable, you can hit `Esc` twice to get back to your prompt. Using the up and down arrow keys, you can find previous commands in the Console if you want to rerun code or fix an error resulting from a typo.
+
+On the Console tab in the top left of that pane is your current working directory. Pressing the arrow next to your working directory will open your current folder in the Files pane. If you find your Console is getting too cluttered, selecting the broom icon in that pane will clear it for you. The Console also shows information: upon start up about R (such as version number), during the installation of packages, when there are warnings, and when there are errors.
+
+### 6.1.3.3 Environment
+
+In the **Global Environment** you can see all of the stored objects you have created or sourced (imported from another script). The Global Environment can become cluttered, so it also has a broom button to clear its workspace.
+
+**Objects** are made by using the assignment operator `<-`. On the left side of the arrow, you have the name of your object. On the right side you have what you are assigning to that object. In this sense, you can think of an object as a container. The container holds the values given as well as information about 'class' and 'methods' (which we will come back to).
+
+Type `x <- c(2,4)` in the Console followed by `Enter`. 1D objects' data types can be seen immediately as well as their first few values. Now type `y <- data.frame(numbers = c(1,2,3), letters = c("a","b","c"))` in the Console followed by `Enter`. You can immediately see the dimension of 2D objects, and you can check the structure of data frames and lists (more later) by clicking on the object's arrow. Clicking on the object name will open the object to view in a new tab. Custom functions created in session or sourced will also appear in this pane.
+
+The Environment pane dropdown displays all of the currently loaded packages in addition to the Global Environment. *Loaded* means that all of the tools/functions in the package are available for use. R comes with a number of packages pre-loaded (i.e. base, grDevices).
+
+In the History tab are all of the commands you have executed in the Console during your session. You can select a line of code and send it to the Source or Console.
+
+The Connections tab is to connect to data sources such as Spark and will not be used in this lesson.
+
+### 6.1.3.4 Files, Plots, Packages, Help, Viewer
+
+The Files tab allows you to search through directories; you can go to or set your working directory by making the appropriate selection under the `More` (blue gear) drop-down menu. The `...` to the top left of the pane allows you to search for a folder in a more traditional manner.
+
+The Plots tab is where plots you make in a .R script will appear (notebooks and markdown plots will be shown in the Source pane). There is the option to Export and save these plots manually.
+
+The Packages tab has all of the packages that are installed and their versions, and buttons to Install or Update packages. A check mark in the box next to the package means that the package is loaded. You can load a package by adding a check mark next to a package, however it is good practice to instead load the package in your script to aid in reproducibility.
+
+The Help menu has the documentation for all packages and functions. For each function you will find a description of what the function does, the arguments it takes, what the function does to the inputs (details), what it outputs, and an example. Some of the help documentation is difficult to read or less than comprehensive, in which case goggling the function is a good idea.
+
+The Viewer will display vignettes, or local web content such as a Shiny app, interactive graphs, or a rendered html document.
+
+### 6.1.3.5 Global Options
+
+I suggest you take a look at `Tools -> Global Options` to customize your experience.
+
+For example, under `Code -> Editing` I have selected `Soft-wrap R source files` followed by `Apply` so that my text will wrap by itself when I am typing and not create a long line of text.
+
+You may also want to change the `Appearance` of your code. I like the `RStudio theme: Modern` and `Editor font: Ubuntu Mono`, but pick whatever you like! Again, you need to hit `Apply` to make changes.
+
+That whirlwind tour isn't everything the IDE can do, but it is enough to get started.
+
+------------------------------------------------------------------------
+
+## The Center for the Analysis of Genome Evolution and Function (CAGEF)
+
+The Centre for the Analysis of Genome Evolution and Function (CAGEF) at the University of Toronto offers comprehensive experimental design, research, and analysis services in microbiome and metagenomic studies, genomics, proteomics, and bioinformatics.
+
+From targeted DNA amplicon sequencing to transcriptomes, whole genomes, and metagenomes, from protein identification to post-translational modification, CAGEF has the tools and knowledge to support your research. Our state-of-the-art facility and experienced research staff provide a broad range of services, including both standard analyses and techniques developed by our team. In particular, we have special expertise in microbial, plant, and environmental systems.
+
+For more information about us and the services we offer, please visit <https://www.cagef.utoronto.ca/>.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/CAGEF_new.png?raw=true" width="700"/>
+:::
