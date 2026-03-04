@@ -1,0 +1,533 @@
+---
+title: Advanced Data Visualization Assignment 1
+output:
+  html_notebook: default
+  pdf_document: default
+---
+
+```{r, echo=FALSE}
+# This allows the file to be LIVE and run without errors stopping it.
+knitr::opts_chunk$set(error = TRUE)
+```
+
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/CAGEF_services_slide.png?raw=true" width="700"/>
+
+# Advanced Graphics and Data Visualization in R
+
+# Assignment 01: Practicing with tidy data principles and graphic visualizations
+
+## Student Name:
+
+## Student Number:
+
+------------------------------------------------------------------------
+
+## 0.1.0 An overview of Advanced Graphics and Data Visualization in R
+
+**"Advanced Graphics and Data Visualization in R"** is brought to you by the Centre for the Analysis of Genome Evolution & Function's (CAGEF) bioinformatics training initiative. CSB1021 was developed to enhance the skills of students with basic backgrounds in R by focusing on available philosophies, methods, and packages for plotting scientific data. Many of the datasets and examples used in this course will be drawn from real-world datasets and the techniques learned herein aim to be broadly applicable to multiple fields.
+
+This assignment is the first in a 6-part series. The aim for the end of this series is for students to recognize how to import, format, and display data based on their intended message and audience. The format and style of these visualizations will help to identify and convey the key message(s) from their experimental data.
+
+At the start of each lecture, assignments will be provided for use on the [University of Toronto datatools Hub](https://datatools.utoronto.ca) so students can apply and familiarize themselves with the material from the lecture.
+
+------------------------------------------------------------------------
+
+## 0.2.0 Lecture review
+
+This week's lecture focused on refreshing your skills in R and reviewing helpful verbs from the `tidyverse` package. Most importantly we focused on
+
+1.  Converting datasets from wide-format to long-format
+2.  Redirecting output to functions with `%>%`
+3.  Trimming and updating text to be more concise
+4.  Generating basic plots with ggplot
+
+------------------------------------------------------------------------
+
+## 0.3.0 A legend for text format in R markdown
+
+`grey background` - a package, function, code, command or directory. Backticks are also use for in-line code.\
+*italics* - an important term or concept or an individual file or folder\
+**bold** - heading or a term that is being defined\
+[blue text]{style="color:blue"} - named or unnamed hyperlink
+
+`...` - Within each coding cell this will indicate an area of code that students will need to complete for the code cell to run correctly.
+
+::: {.alert .alert-block .alert-info}
+<b>Blue box:</b> A key concept that is being introduced
+:::
+
+::: {.alert .alert-block .alert-warning}
+<b>Yellow box:</b> Risk or caution
+:::
+
+::: {.alert .alert-block .alert-success}
+<b>Green boxes:</b> Recommended reads and resources to learn Python
+:::
+
+::: {.alert .alert-block .alert-danger}
+<b>Red boxes:</b> A comprehension question which may or may not involve a coding cell. You usually find these at the end of a section.
+:::
+
+------------------------------------------------------------------------
+
+## 0.4.0 Data used in this assignment
+
+Today's datasets will focus on using a [Federal Respiratory Virus Detections dataset](https://www.canada.ca/en/public-health/services/surveillance/respiratory-virus-detections-canada.html). This data was used to compile a [weekly FluWatch report](https://www.canada.ca/en/public-health/services/diseases/flu-influenza/influenza-surveillance/weekly-influenza-reports.html). The data we'll use today is a compilation of the 2022-2023 and 2023-2024 datasets. This will be an interesting dataset to look at since it contains datapoints across time regarding the testing and positive results for multiple respiratory viruses.
+
+### 0.4.1 Dataset 1: 260227_RespiratorySurveillanceData_wide.csv
+
+This dataset contains the amalgamated observations of virus testing reports for multiple reporting provinces across Canada during the respiratory season of 2025-2026. The seasons begins in the 35th week of the year and the data currently terminates in week 7 of 2026.
+
+------------------------------------------------------------------------
+
+## 0.5.0 Packages used in this assignment (2 points)
+
+`tidyverse` which has a number of packages including `dplyr`, `tidyr`, `stringr`, `forcats` and `ggplot2`
+
+`Assignment01.RData` can be found in the `assignment/data` subfolder. This can be identified locally using just "data/".
+
+Please load these packages and datasets.
+
+```{r}
+# Load special assignment 01 objects
+load("...")
+
+# Load your packages here
+...
+```
+
+------------------------------------------------------------------------
+
+# 1.0.0 What are the trends around the current respiratory virus season in Canada?
+
+From the Government of Canada we worked with a relatively robust set of surveillance data spanning 2022-2024 and 2 seasons of respiratory virus monitoring. In today's assignment we'll look at a current set of data for the 2025-2026 season. While the layout is similar there are some differences and you'll have to go back to square one with wrangling the data.
+
+## 1.1.0 Importing and inspecting data (2 points)
+
+Begin by importing and inspecting the dataset. Save your dataset as the variable `respData2026.df`.
+
+```{r}
+# Open your dataset with read_csv
+respData2026.df <- read_csv(...)             # 1.0 pts
+
+# Look at the structure of respData2026.df
+str(...)                                             # 1.0 pts   
+```
+
+### 1.1.1 The problem with commas in your numbers (1 point)
+
+If you were to look closely at the original data file, you would find that many numeric values above 999 use a `,` as a separator for the thousands column. This poses some potential risks in a comma-separate format. Luckily, these kinds of values are differentiated in the plain text by using double-quotes to surround the value such as `"1,309"` and `"2,526"`.
+
+This is a relatively benign issue which `read_csv()` takes care of for us when importing the data. The additional double-quotes are stripped from those values and we are left with numeric values in at least the first half of our data columns. However, the latter half of our columns are all created as character type data. In lecture we simply went about the business of using `as.numeric()` to typecast our numbers to numeric form. Any character-type values would be converted to `NA` in the process.
+
+Take a quick look at the `HPIV tests` column using the `pull()` verb.
+
+```{r}
+# Run this to look at the HPIV tests column data
+respData2026.df %>% 
+  ...
+
+```
+
+Notice that we have a number of "N/A" values in the column. What happens if we simply convert that to numeric form by casting it?
+
+```{r}
+# Run this to look at the HPIV tests column data
+respData2026.df %>% 
+  # Pull the HPIV tests column
+  ... %>% 
+  # convert to numeric (1 point)
+  ...
+```
+
+------------------------------------------------------------------------
+
+### 1.1.2 Use the `readr:parse_number()` function to read through various number formats (1 point)
+
+Oh dear, we have a disproportionate number of NA values! This is not what you want, but it's exactly what you deserve. The problem with having a character value like "1,189" is that `as.numeric()` can no longer properly convert this to 1189 as expected. The extra "," in our value has ruined the process.
+
+When the world gives you weird number formats, turn to the `tidyverse` to help you out. Instead of using the standard base `as.numeric()` conversion or in combination with other string-parsing functions like `gsub()`, you can use the `parse_number()` function from the `readr` package. This function is more robust and designed to parse through potentially odd number formatting. It can ignore "\$" symbols from your values, and even take into account the locale. For instance, europeans use "." as a separator and the "," as a decimal!
+
+The `parse_number()` function includes the `na` parameter which you can use to define possible `NA` values in your dataset.
+
+Use the following code cell to see how parse_number() would work on the `HPIV tests` variable in our dataset. Be sure to account for true `NA` values.
+
+```{r}
+# Use parse_number() to convert the HPIV tests column data
+respData2026.df %>% 
+  # Pull the HPIV tests column
+  ... %>% 
+  # convert to number (1 point)
+  ...
+```
+
+------------------------------------------------------------------------
+
+### 1.1.3 Use the `na` parameter to identify potential NA values in your dataset *during* import (1 point)
+
+We could work through the process of removing all the commas from the columns in the right half of our data frame and then converting to numeric using something like `mutate_with` but there is a simpler path. If we were to import the dataset correctly using its own `na` parameter, then `read_csv()` will correctly parse/interpret the numeric data from the start!
+
+Import the dataset again, this time by defining the correct characters as potential `NA` values.
+
+```{r}
+# Open your dataset with read_csv
+respData2026.df <- ...             # 1.0 pts
+
+# Look at the structure of respData2026.df
+str(respData2026.df, give.attr = FALSE)                                              
+```
+
+------------------------------------------------------------------------
+
+So by identifying the correct `NA` values before import, there is no need re-cast any of the columns after importing!
+
+## 1.2.0 Combine and select columns (2 points)
+
+Looking at the available columns, it becomes apparent that we definitely have a similar dataset as what we worked with in class with a few exceptions. There are some changes to our virus column names and we now have a date-based column that denotes the end of our surveillance week. So let's get to the work of converting the data to long format.
+
+It looks like we'll have to combine HPIV detections into a single total detection variable. Influenza already has a "Total Influenza detections" variable so we won't need to remake that.
+
+1.  Create a new variable "HPIV detections" which consists of the sum of all "HPIV X detections" and "Other HPIV detections" (2 pts)
+2.  Then remove the unnecessary partial-detection columns for both the Influenza and HPIV viruses. Use `select()` from `dplyr` to accomplish your goal (1pt).
+
+You can compare your output result to the saved object `respData2026_mutated.df`.
+
+```{r}
+# Create columns and select as necessary (3 pts)
+
+respData2026.df %>% 
+  # Create a new variable
+  mutate(...) %>% 
+  
+  # deselect the redundant columns
+  select(...) %>% 
+  
+  # Check the output of our changes
+  str()
+```
+
+------------------------------------------------------------------------
+
+## 1.3.0 Rename columns to reduce their complexity (1 point)
+
+Now that we've selected the appropriate columns, you'll need to rename some to simplify working with them. Use the appropriate combination of `dplyr` verbs and `%>%` to change your column names. Use the dataframe `respData2026_mutated.df` located in your memory to perform the appropriate column name changes.
+
+Here's a table of what to change:
+
+| Original Column Name       | New Column Name      |
+|----------------------------|----------------------|
+| Reporting laboratory       | ReportingLaboratory  |
+| Total influenza detections | Influenza detections |
+
+```{r}
+# 1.3.0 Rename the columns we've selected in the previous sections
+
+respData2026_mutated.df %>% 
+  rename(...
+         ) %>% 
+  
+  # Check the output of our changes
+  str()
+
+```
+
+------------------------------------------------------------------------
+
+## 1.4.0 Which viruses are being consistently tested across each province (2 points)?
+
+Given the original structure of our data, we can make a good guess at which viruses had complete datasets, but there could certainly be some large groups of NA values that were overlooked during our initial scan of the structure.
+
+Remember that we can use some helpful functions to find out which columns contain NA values in our dataset. Use the `respData2026_renamed.df` object and the code cell below to inspect for `NA` values. Use functions like `apply()`, `is.na()`, and `colnames()` to retrieve a final vector of column names that have `NA` values.
+
+Reminder: in the `apply()` function, you can describe an anonymous function to the `FUN` parameter using `FUN = function(x) statement`.
+
+```{r}
+# Determine which columns have NA values by creating a vector of offending column names as a result
+
+...
+
+```
+
+------------------------------------------------------------------------
+
+Take quick note of quick columns that have `NA` values present!
+
+## 1.5.0 Reshape your data with pivoting and separating (4 points)
+
+Now that you have properly trimmed and renamed the dataset, you can go about the business of pivoting to a long format and creating two new variables called "tests" and "detections". In the end we want a dataframe that looks like this:
+
+| Season | Week | EndingDate | ReportingLaboratory | Virus | tests | detections | PercentPositive |
+|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| 2025-2026 | 7 | 2026-02-21 | Newfoundland and Labrador | SARS-CoV-2 | 405 | 14 | 3.4567901 |
+| ... | ... | ... | ... | ... | ... | ... | ... |
+
+You will use a combination of `pivot_longer()`, `separate_wider_delim()`, and `pivot_wider()` to accomplish this task. You'll finish by creating a new variable `PercentPositive` which should just be `detections`/`tests`\*100. Use the object `respData2026_renamed.df` as your starting point.
+
+You may compare it to the final object `respData2026_long.df` to confirm correctness.
+
+```{r}
+# Reshape the data with the appropriate verbs
+
+respData2026_renamed.df %>%
+  # 0.5 pts per pivot_longer parameter
+  pivot_longer(...) %>%
+  # 0.5 pts per separate parameter
+  separate_wider_delim(...) %>% 
+  # 0.5 pts per pivot_wider parameter
+  pivot_wider(...) %>% 
+  # create a PercentPositive variable
+  mutate(...)
+
+# Use this to compare your result. Do they look similar?
+head(respData2026_long.df)
+```
+
+------------------------------------------------------------------------
+
+### 1.5.1 Remove entries that have NA values from the dataset (2 points)
+
+Looking at the output from our query, we must consider removing some of the entries that have no real data. After importing our data, the "N/A" entries became `NA` values. While we could not remove those values *before* pivoting, we are able to remove them now that they represent single observations.
+
+We have two ways to approach this. Remove the `NA` values from our dataset using the `filter()` verb and then again using the `drop_na()` verbs. Use `respData2026_long.df` to remove any observations that have no values (ie NA) in the "tests" or "detections" variables.
+
+```{r}
+# Use filter to remove NA values (1 point)
+
+respData2026_long.df %>% 
+  ...
+```
+
+```{r}
+# Use drop_na() to remove NA rows (1 point)
+respData2026_long.df %>% 
+  ...
+```
+
+------------------------------------------------------------------------
+
+## 1.6.0 Compare the filtered and unfiltered datasets (2 points)
+
+Now that we've generated our sets of filtered data, please determine the following:
+
+1.  How many observations have been removed during the filtering process? (1pt)
+2.  Which virus or viruses have the fewest observations in the dataset? Identify the total observations for that virus. (1pt)
+
+Use the code cells below to help calculate your answers by comparing `respData2026_long.df` against `respData2026_filtered.df`
+
+```{r}
+# Calculate the number of observations (rows) removed between filtered and unfiltered datasets
+
+```
+
+```{r}
+# Determine the virus with the lower total number of observations in the filtered dataset
+respData2026_filtered.df %>% 
+  ...
+```
+
+#### Answers:
+
+1.  There are \_\_\_\_\_ entries removed by the filtering process.
+
+2.  The virus with fewest observations is **\_\_\_**\_\_ with **\_\_\_**\_\_ total observations.
+
+------------------------------------------------------------------------
+
+## 1.7.0 Rename column names by providing a function to `rename_with()` (1 point)
+
+As we saw earlier in lecture, you can use the `rename_with()` verb to apply a function to renaming columns. Normally you may name a function like `str_to_lower` that would make all of the letters lower case in each column name. However, we may sometimes require more complex actions such as only making the first letter of each column name lowercase.
+
+We can do so by generating an anonymous function and providing the defining expression for our function. In this case, by using a string replacement of the first letter with it's lowercase variant. The `str_replace()` function can accept another function like `tolower` as the argument to its `replacement` parameter.
+
+Use the following code cell to rename the columns of `respData2026_filtered.df` using the `rename_with()` verb and creating an anonymous function.
+
+```{r}
+respData2026_filtered.df %>% 
+  rename_with(.fn = ...)
+```
+
+------------------------------------------------------------------------
+
+### 1.7.1 The `purrr` package simplifies anonymizing functions with `~` (1 point)
+
+As you can see, the code from above *works* but depending on the complexity of your renaming function, it can be messy and really takes up quite a bit of space. We can truncate some of that syntax by taking advantage of the `purrr` package which helps to simplify that function declaration and collapses it using the `~` symbol. So the `~` takes the place of `function (x)`.
+
+In this case the `~` predefines its function parameter as `.x` and allows you to even use a `.y` if needed in the definition of the function. Complete the code below to make a simpler version of the anonymous replacement function.
+
+```{r}
+
+respData2026_filtered.df %>% 
+  rename_with(.fn = ...)
+```
+
+------------------------------------------------------------------------
+
+# 2.0.0 Plotting percent positivity of viruses across Canadian provinces
+
+Now that we have figured out how to properly filter our data, let's take the final dataset and produce a summary of it for plotting.
+
+## 2.1.0 Summarize data looking at virus positivity based on province (3 points)
+
+For our summary, we'll look at each province and virus across the season so far to determine the mean, min, max and number of datapoints for the `percentPositive` variable. We'll store those values in meanPositivity, minPositivity, maxPositivity, and dataPoints respectively.
+
+Use the following code cell to generate a piped version of the summary data.
+
+```{r}
+# Summarize the data for positivity
+
+respData2026_final.df %>% 
+  # 1 point grouping
+  group_by(...) %>%               
+  summarise(
+    # 2 points to create the correct summary variables
+    meanPositivity = ...,
+    minPositivity = ...,
+    maxPositivity = ...,
+    dataPoints = ...
+    )
+```
+
+------------------------------------------------------------------------
+
+### 2.1.1 Generate a strip plot comparing positivity data (5 points)
+
+Replicate the following figure as displayed below. Note that we are plotting the mean weekly positivity for each virus in each province within our dataset. You can find the summary information used to generate this plot in the `positivitySummary.df` dataframe.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Assignments/A1-2.1.1_positivity.png?raw=true" width="700"/>
+
+Figure 1: A comparison of mean positivity across provinces for each viral group tested.
+:::
+
+Hint: Take a close look at the legend of the figure!
+
+```{r, fig.width = 10, fig.height = 6}
+# Recreate Figure 1 here
+
+positivitySummary.df %>% 
+  filter(...) %>%                                 
+  ggplot() +
+  ...
+
+```
+
+------------------------------------------------------------------------
+
+### 2.1.2 Comprehension Questions
+
+#### Question 1: Which virus sets appear to have the highest mean weekly positivity across the dataset? (1 point)
+
+Answer:
+
+#### Question 2: From the figure, do you think each province is testing for all the viral groups? Provide your reasoning. (2 points)
+
+Answer:
+
+#### Question 3: Using the coding cell below, prove (or disprove) your answer from above. (2 points)
+
+```{r}
+# How would you prove your answer to Question 2?
+positivitySummary.df %>% 
+  ...
+```
+
+------------------------------------------------------------------------
+
+## 2.2.0 Visualizing the Canada-wide viral positivity as a line graph (5 points)
+
+Continuing with our data, our previous visualization was a summary of the mean positivity for the entire season thus far but it doesn't give us the bigger picture of the entire trend across Canada. Instead, we should focus on a visualization that gives us a sense of what's happening over time with each of the viruses without necessarily being too overwhelming. This can help to reveal a nation-wide trend from the data that might provide more insight.
+
+Recreate the following visualization using the `respData2026_final.df` dataset.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Assignments/A1-2.2.0_Canada-wide_positivity.png?raw=true" width="700"/>
+
+Figure 2: A comparison of wages for medically-related professions based on province
+:::
+
+```{r, fig.width = 12, fig.height=8}
+# Recreate Figure 2 here
+
+respData2026_final.df %>% 
+  ...
+
+```
+
+------------------------------------------------------------------------
+
+### 2.2.1 Comprehension Question
+
+#### Question 1: Looking at the national trends, give 3 interesting points that you can infer from the figure (3 points)
+
+Answer:
+
+------------------------------------------------------------------------
+
+## 2.3.0 Visualizing mean positivity across multiple provinces (7 points)
+
+Now that we've take a look at the overall national trend for viruses, we can also compare across provinces to look for similar or differences in the national trend. To do this, we'll dissect the data again but display provincial positivity rates for EV/RV, Influenza, and SARS-CoV-2 specifically.
+
+Recreate the following figure to look at the provincial trends for our three viral groups.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Assignments/A1-2.3.0_provincialPositivity.png?raw=true" width="700"/>
+
+Figure 3: A comparison of mean positivity across provinces for each viral group tested.
+:::
+
+```{r, fig.width = 12, fig.height=10}
+# Recreate figure 3 here
+
+respData2026_final.df %>% 
+  ...
+
+```
+
+------------------------------------------------------------------------
+
+### 2.3.1 Comprehension Questions
+
+#### Question 1: Which provinces appear to follow the national trend? Which provinces do not follow the national trend? (2 points)
+
+Answer:
+
+#### Question 2: Which factor/aspect in the data do you think most influences the national trend in figure 2 with respect to the provincial trends in figure 3 (1 points)? Use the code cell below to support your argument (1 point).
+
+Answer:
+
+```{r}
+# Use this code cell to help support your Question 2 answer.
+
+respData2026_final.df %>%
+  ...
+```
+
+------------------------------------------------------------------------
+
+# 3.0.0 Assignment rubric
+
+Please provide answers in markdown or code cells that immediately follow each question section. There are **50** points distributed across this assignment.
+
+|   | Assignment breakdown |   |
+|:--:|:--:|:---|
+| Code | 50% | \- Does it follow best practices? |
+|  |  | \- Does it make good use of available packages? |
+|  |  | \- Was data prepared properly |
+| Answers and Output | 50% | \- Is output based on the correct dataset? |
+|  |  | \- Are groupings appropriate |
+|  |  | \- Are correct titles/axes/legends correct? |
+|  |  | \- Is interpretation of the graphs correct? |
+
+Since coding styles and solutions can differ, students are encouraged to use best practices. Assignments *may* be rewarded for well-coded or elegant solutions.
+
+You can save and download the RMD notebook in its native format. Rename the file by prepending your first initial and last name ie `CMok_Lecture_01.Adv_graphics.assignment.student.RMD`. Submit this file to the the appropriate assignment portal by 12pm on the date of our next class: March 20th, 2025.
+
+## 3.1.0 Assignment Difficulty Feedback (1 point bonus)
+
+Since this is still a rather new course, we are always looking to improve on material. Please answer the following questions:
+
+1.  Approximately how many hours did you spend completing this assignment?
+
+2.  On a scale of 1-10 please rate the difficulty of the assignment. 1 = simple and nothing was learned, 5 = challenging with helpful material learned, 10 = extremely difficult/unable to complete/frustratingly esoteric.
+
+3.  Any additional comments can be placed here.

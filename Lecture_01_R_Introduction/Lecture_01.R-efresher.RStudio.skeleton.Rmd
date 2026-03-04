@@ -194,7 +194,7 @@ $$
 See? Just like that! Here is an example of a table made in Markdown, showing some of the most popular R libraries for data science:
 
 | Library   | Use                                                            |
-|-----------|----------------------------------------------------------------|
+|---------------|---------------------------------------------------------|
 | tidyverse | Simplified tabular-data processing functions                   |
 | ggplot2   | Data visualization package typically included in the tidyverse |
 | shiny     | Used to create interactive R-based web pages and interfaces    |
@@ -429,7 +429,7 @@ If we want to hold on to a number, calculation, or object we need to *assign* it
 Data types are used to classify the basic spectrum of values that are used in R. Here's a table describing *some* of the common data types we'll encounter.
 
 | Data type | Description | Example |
-|:---|:---|:---|
+|:-----------------------|:-----------------------|:-----------------------|
 | character | Can be single or multiple characters (strings) of letters and symbols. Assigned using double `'` or `"` | a#c&E |
 | integer | Whole number values, either positive or negative | 1 |
 | double | Any number that is not an integer | 7.5 |
@@ -1231,7 +1231,7 @@ The `tidyr` package will be most useful when we are trying to reshape our data f
 The `stringr` package will come in most useful when we are trying to fix string issues with our data. Many time our headers or data will contain spaces or poor formatting. Many times we will prefer to have our headers in lower case format, with any spaces replaced by an `_`. We'll also use verbs from this package to make any variables or data more concise.
 
 | Category | Function(s) | Description |
-|:---|:---|:---|
+|:-----------------------|:-----------------------|:-----------------------|
 | **String analysis** | `str_count()` | Count the number of matches in a string |
 |  |  |  |
 | **String retrieval** | `str_detect()` | Detect the presence (or absence) of a pattern in string |
@@ -1342,7 +1342,7 @@ respData.df %>%
 Looking at our output from above, we now see that our data is in a mostly long format but not yet in a tidy format for our purposes. We've managed to collect all the testing AND result data into the same set of columns: `category` and `count`. Ideally want we want is to add two more variables to our data so that our final table looks more like:
 
 | Season | Year | Week | Surveillance Week | Reporting Laboratory | Category | Tested | Positive | Percent Positive |
-|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|:------:|
 | 2023-2024 | 2024 | 23 | 40 | Newfoundland | EV/RV | 19630 | 1844 | 0.0939 |
 | ... | ... | ... | ... | ... | ... | ... | ... | ... |
 
@@ -1573,17 +1573,16 @@ respData_long_copy.df <- respData_long.df
 ------------------------------------------------------------------------
 
 ::: {.alert .alert-block .alert-danger}
-**Comprehension Question 3.2.9:** In the above example we used the **relocate()** function to move the "ReportingLaboratory" column to the start of our data frame. What other methods could we use to accomplish the same feat? Use the below code cell to help yourself out.
+**Comprehension Question 3.2.9:** In the above example we used the **relocate()** function to move the "ReportingLaboratory" column to the start of our data frame. What other methods could we use to accomplish the same feat? Use the below code cell to use a different verb to move the column to the end (right side) of the dataframe.
 :::
 
 ```{r, error=TRUE}
 # comprehension answer code 3.2.9
-# Relocate our target column using the select() command
 
-# Use this copy of the sunshine list 
+# Use this copy of the respiratory data 
 respData_long_copy.df %>% 
 
-  # relocate "salary" and "taxableBenefits" to the right of "numericID"
+  # relocate ReportingLaboratory to the right side of the data frame
   ... %>% 
 
   head()
@@ -2109,7 +2108,7 @@ Next week? Getting deeper into `ggplot2`!
 This week's assignment will be found under the current lecture folder under the "assignment" subfolder. It will include an R markdown notebook that you will use to produce the code and answers for this week's assignment. Please provide answers in markdown or code cells that immediately follow each question section.
 
 |   | Assignment breakdown |   |
-|:--:|:--:|:---|
+|:----------------------:|:----------------------:|:-----------------------|
 | Code | 50% | \- Does it follow best practices? |
 |  |  | \- Does it make good use of available packages? |
 |  |  | \- Was data prepared properly |
