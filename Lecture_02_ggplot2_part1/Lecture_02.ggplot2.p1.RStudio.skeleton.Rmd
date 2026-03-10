@@ -1,0 +1,2229 @@
+---
+title: 'Advanced Visualizations Lecture 02'
+output:
+  html_notebook: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r, echo=FALSE}
+# This allows the file to be LIVE and run without errors stopping it.
+knitr::opts_chunk$set(error = TRUE)
+```
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/CAGEF_services_slide.png?raw=true" width="700"/>
+:::
+
+# Advanced Graphics and Data Visualization in R
+
+# Lecture 02: `ggplot2` and choosing the right visualization for your audience
+
+## 0.1.0 An overview of Advanced Graphics and Data Visualization in R
+
+**"Advanced Graphics and Data Visualization in R"** is brought to you by the Centre for the Analysis of Genome Evolution & Function's (CAGEF) bioinformatics training initiative. CSB1021 was developed to enhance the skills of students with basic backgrounds in R by focusing on available philosophies, methods, and packages for plotting scientific data. Many of the datasets and examples used in this course will be drawn from real-world datasets and the techniques learned herein aim to be broadly applicable to multiple fields.
+
+This lesson is the second in a 6-part series. The aim for the end of this series is for students to recognize how to import, format, and display data based on their intended message and audience. The format and style of these visualizations will help to identify and convey the key message(s) from their experimental data.
+
+The structure of the class is a **code-along style** in R markdown notebooks. At the start of each lecture, skeleton versions of the lecture will be provided for use on the [University of Toronto datatools Hub](https://datatools.utoronto.ca) so students can program along with the instructor.
+
+------------------------------------------------------------------------
+
+## 0.2.0 Lecture objectives
+
+This week will delve into some helpful visualization available through the `ggplot2` package. First we'll go over deciding which visualizations are best for what we want to accomplish and then explore some of these in more detail.
+
+At the end of this lecture you will have covered the following topics
+
+1.  The grammar of graphics.
+2.  Scatterplots and their variants.
+3.  Barplots and their variants.
+4.  Density plots and their variants.
+5.  Categorical plots and their variants.
+
+------------------------------------------------------------------------
+
+## 0.3.0 A legend for text format in R markdown
+
+`grey background` - a package, function, code, command or directory. Backticks are also use for in-line code.\
+*italics* - an important term or concept or an individual file or folder\
+**bold** - heading or a term that is being defined\
+[blue text]{style="color:blue"} - named or unnamed hyperlink
+
+`...` - Within each coding cell this will indicate an area of code that students will need to complete for the code cell to run correctly.
+
+::: {.alert .alert-block .alert-info}
+**Blue box:** A key concept that is being introduced
+:::
+
+::: {.alert .alert-block .alert-warning}
+**Yellow box:** Risk or caution
+:::
+
+::: {.alert .alert-block .alert-success}
+**Green boxes:** Recommended reads and resources to learn R
+:::
+
+::: {.alert .alert-block .alert-danger}
+**Red boxes:** A comprehension question which may or may not involve a coding cell. You usually find these at the end of a section.
+:::
+
+------------------------------------------------------------------------
+
+## 0.4.0 Lecture and data files used in this course
+
+### 0.4.1 Weekly Lecture and skeleton files
+
+Each week, new lesson files will appear within your RStudio folders. We are pulling from a GitHub repository using this [Repository git-pull link](https://r.datatools.utoronto.ca/hub/user-redirect/git-pull?repo=https%3A%2F%2Fgithub.com%2Fuoft-csb-datasci%2F2026-03-Adv_Graphics_R&urlpath=rstudio%2F&branch=main). Simply click on the link and it will take you to the [University of Toronto datatools Hub](https://datatools.utoronto.ca). You will need to use your UTORid credentials to complete the login process. From there you will find each week's lecture files in the directory `/2026-03-Adv_Graphics_R/Lecture_XX`. You will find a partially coded `skeleton.Rmd` file as well as all the data files necessary to run the week's lecture.
+
+Alternatively, you can download the R-Markdown Notebook (`.Rmd`) and data files from the RStudio server to your personal computer if you would like to run independently of the Toronto tools.
+
+### 0.4.2 Live-coding HTML page
+
+A live lecture version will be available at [uoft-csb-datasci.github.io](https://uoft-csb-datasci.github.io/2026-03.Adv_Graphics_R/index.html) that will update as the lecture progresses. Be sure to refresh to take a look if you get lost!
+
+### 0.4.3 Post-lecture Files
+
+At the end of each lecture there will be a completed version of the lecture code released as an HTML file under the Modules section of Quercus.
+
+### 0.4.4 Data used in this lesson
+
+Today's datasets will focus on using a [Federal Respiratory Virus Detections dataset](https://www.canada.ca/en/public-health/services/surveillance/respiratory-virus-detections-canada.html). This data was used to compile a [weekly FluWatch report](https://www.canada.ca/en/public-health/services/diseases/flu-influenza/influenza-surveillance/weekly-influenza-reports.html). The data we'll use today is a compilation of datasets from the 2022-23 season through to 2025-26. This will be an interesting dataset to look at since it contains datapoints across time regarding the testing and positive results for multiple respiratory viruses.
+
+### 0.4.4.1 Dataset 1: respFinalPop.df
+
+This dataframe will be found in the `Lecture02.RData` file and contains and full version of our dataset from last week. While we were unable to practice our wrangling on the data from all years, we can load a full version that has been saved in a more compact binary file!
+
+This is a version of the respiratory surveillance data ranges from 2022-2026 and takes a similar form to the dataframe seen in assignment 01.
+
+------------------------------------------------------------------------
+
+## 0.5.0 Packages used in this lesson
+
+`tidyverse` which has a number of packages including `dplyr`, `tidyr`, `stringr`, `forcats` and `ggplot2`
+
+`viridis` helps to create color-blind palettes for our data visualizations
+
+`ggbeeswarm`, and `ggridges` are new packages we need to install. They'll help us generate some nice graphs.
+
+```{r}
+# ---------- Install packages here ---------- #
+install.packages("ggbeeswarm", dependencies = TRUE)
+
+```
+
+```{r}
+# ---------- Source packages here ---------- #
+# Packages to help tidy our data
+library(tidyverse)
+
+# Packages for the graphical analysis section
+library(viridis)
+
+# New visualisation packages
+library(ggridges) # ridgeline plots
+library(ggbeeswarm)
+```
+
+------------------------------------------------------------------------
+
+# 1.0.0 Why is data visualization important?
+
+How do we extract meaningful insights from our data? If you have previously explored [Anscombe's quartet](https://en.wikipedia.org/wiki/Anscombe%27s_quartet) you'll know that, as scientists and lay people, we can sometime be obsessed with summary statistics - mean, median, mode, standard deviation. While these values are a helpful way to quickly assess a population, they can be flawed to the point of deception. Instead, we should temper our investigations by visualizing our data. A deeper understanding of your data trends and potential models comes from dissecting attributes of your data which can jump out more easily through visualization.
+
+Equally important is the ability to convey our findings to others. The right visualizations, whether simplistic or complex, should effectively communicate our key message.
+
+------------------------------------------------------------------------
+
+## 1.1.0 The grammar of graphics
+
+One approach to effective data visualization relies on the Grammar of Graphics framework originally proposed by Leland Wilkinson (2005). The idea of grammar can be summarized as follows:
+
+-   **Grammar** is the foundational set of rules that define the components of a language.
+-   A language is built on a structure that consists of **syntax and semantics**.
+
+The grammar of graphics facilitates the concise description of any components of any graphics. Hadley Wickham of `tidyverse` fame has proposed a variant on this concept - the ***layered grammar of graphics*** framework. By following a layered approach of defined components, it can be easy to build a visualization.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/MajorComponentsGrammarGraphics.png?raw=true" width="900"/>
+
+The Major Components of the Grammar of Graphics by [Dipanjan Sarkar](https://towardsdatascience.com/a-comprehensive-guide-to-the-grammar-of-graphics-for-effective-visualization-of-multi-dimensional-1f92b4ed4149)
+:::
+
+We can break down the above pyramid by the base components, building from the bottom upwards.
+
+1\. **Data**: your visualization always starts here. What are the dimensions you want to visualize. What aspect of your data are you trying to convey?
+
+2\. **Aesthetics**: assign your axes based on the data dimensions you have chosen. Where will the majority of the data fall on your plot? Are there other dimensions (such as categorically encoded groupings) that can be conveyed by aspects like size, shape, colour, fill, etc.
+
+3\. **Scale**: do you need to scale/transform any values to fit your data within a range? This includes layers that map between the data and the aesthetics.
+
+4\. **Geometric objects**: how will you display your data within your visualization. Which `geom_*` will you use?
+
+5\. **Statistics**: are there additional summary statistics that should be included in the visualization? Some examples include central tendency, spread, confidence intervals, standard error, etc.
+
+6\. **Facets**: will generating subplots of the data add a dimension to our visualization that would otherwise be lost?
+
+7\. **Coordinate system**: will your visualization follow a classic cartesian, semi-log, polar, etc. coordinate system?
+
+------------------------------------------------------------------------
+
+## 1.2.0 `respFinalPop.df` covers 4 seasons of data
+
+Let's look at a full version of our data from last lecture. With this full dataset we can better appreciate some of the figures, visualizations and assignments we created last week but also improve upon them based on today's lecture material.
+
+We'll begin by loading the data into our session from an `.RData` file.
+
+```{r}
+# Read in respiratory surveillance data
+load(...)
+
+# Check the structure and preview the data
+str(respFinalPop.df)
+head(respFinalPop.df)
+```
+
+------------------------------------------------------------------------
+
+Looking at the data itself, we have 15,539 observations across 11 variables:
+
+1.  Year data ranging from the 2022-2023 season through to the 2025-2026 monitoring season.
+2.  We now have a Date variable called `endingDate` which represents the ending date of the test results from each observation's week. We also have `year`, and `month` data to accompany our observations.
+3.  The bulk of our count data is held in the `tests` and `detections` variables while `percentPositive` relates to the percentage of positive (detections) in relation to the total number of tests.
+4.  Metadata or descriptive data is held in the `reportingLaboratory`, `population`, and `virus` variables.
+
+How many unique reporting laboratories are there? How many unique virus groups are there?
+
+```{r}
+# Calculate unique resporting labs
+cat("Unique reporting labs\n")
+respFinalPop.df %>% 
+  pull(...) %>% 
+  unique()
+
+# Calculate unique viral groups
+cat("\nUnique Viral Groups\n")
+respFinalPop.df %>% 
+  pull(...) %>% 
+  unique()
+```
+
+------------------------------------------------------------------------
+
+Refreshing ourselves on the reporting laboratories, we see again provincial names which act as an amalgamation of testings sites, to represent the total values (tests and detections) in those provinces. Luckily for us, the data has been cleaned and is ready to be worked with!
+
+## 1.3.0 Which aspects of the data do we wish to highlight?
+
+Let's take a look at the [following chart](https://extremepresentation.typepad.com/blog/2006/09/choosing_a_good.html) from from Dr. Andrew V. Abela.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Abela.ChartChooser.png?raw=true" width="900"/>
+
+From the flowchart above we'll mainly explore looking at relationships and composition using our dataset as a basis for our visualizations.
+
+We'll cover distributions and comparison with a more complex dataset later in this lecture.
+:::
+
+------------------------------------------------------------------------
+
+# 2.0.0 Visualizations help us identify relationships and correlations
+
+Depending on the nature of your data and its dimensions there are a number of plots to choose from to represent and convey relationships between your variables. These various plots can reveal trends, correlations, and ultimately relationships between variables.
+
+In our first lecture, we briefly explored bar charts and a vertical version of scatterplots called the strip plot. As an initial form of graphical assessment today we'll begin with scatterplots which build a framework for exploring our data further.
+
+| Relationship Description | Types of charts |
+|:---|:---|
+| Finding correlations in your data | Scatterplot (biplot) |
+|  | Strip plot |
+|  | Bubble chart |
+|  | Lineplot |
+|  | Heatmap |
+| Showing connections between groups | Arc diagram |
+|  | Chord diagram |
+|  | Connection map |
+|  | Network diagram |
+|  | Non-ribbon chord diagram |
+|  | Tree diagram |
+| Show relationships and connections between the data | Heatmap |
+| or showing correlations between two or more variables | Marimekko Chart |
+|  | Parallel coordinates plot |
+|  | Radar chart |
+|  | Venn diagram |
+
+We'll focus on just two relational plots in this section: the scatterplot and it's variant the bubblechart. Parallel coordinate plots will also make an appearance later on during this lecture.
+
+------------------------------------------------------------------------
+
+## 2.1.0 Scatterplots and bubblecharts are `geom_point()` graphs
+
+When we try to examine relationships, one direction we can take is to look for trends by comparing one variable against another. From an experimental standpoint we can graph our independent variable on the x-axis, looking for changes in our dependent variable/measurement on the y-axis. This is most easily accomplished when both of your variables are on a continuous scale.
+
+When trying to show correlations in your data between two to three variables you can use scatterplots (also known as biplots). Remember there are some limitations when visualizing multi-dimensional data on a two-dimensional canvas. Overall these plots can convey to your audience the potential correlations between your variables or separations between groups based on their colour or shape.
+
+### 2.1.1 Use the `alpha` parameter to help visualize overlapping data points
+
+Let's begin with a scatterplot comparing `tests` vs `detections`. We'll use each individual observation as a datapoint to compare the two values to see if perhaps, there is a relationship in how one is measured over the other. Of note, within the `geom_point()` layer, we'll be updating the `alpha` parameter to change the transparency of our points.
+
+::: {.alert .alert-block .alert-info}
+**Using the "alpha" parameter:** Note that **`alpha = 1`** will make completely opaque points while **`alpha = 0`** will make completely transparent points. As points begin to overlap, they will create increasingly opaque areas in your visualization. Generally an opacity value of about 0.5-0.7 is a good place to start when working with a moderate number of overlapping plots.
+:::
+
+```{r, fig.width=7, fig.height=7}
+# 2.1.1 scatterplot of detections vs tests
+
+respFinalPop.df %>% 
+  ggplot() +
+  # 2. Aesthetics
+  aes(x = ..., y = ...) +
+  # set text size
+  theme(text = element_text(size = 10)) +
+  
+  # 4. Geoms
+  ...
+
+```
+
+------------------------------------------------------------------------
+
+It looks as though perhaps there are a number of points that sit far below 250K tests and a small group well above that value. Overall, however, we can see that as the number of tests increases, you also get a somewhat steady increase in detections. We also see what appears to be an outlier way out at the top right of our figure.
+
+**Challenge yourself: how would you identify which of our observations this test outlier belongs to?**
+
+### 2.1.2 The bubbleplot adds an obvious dimensionality to your data
+
+The bubbleplot, as we'll see, brings an additional dimension to your visualization by varying the size of your points based on a (usually) continuous variable. This can help to highlight underlying data trends in a more obvious fashion for your audience.
+
+To achieve this we will set the `size` parameter in our aesthetics `aes()` layer. By setting the `size` parameter to a variable in our data, it will alter the size of our data points. We will augment the results of this by providing a size range through the `scale_size()` layer.
+
+```{r, fig.width=16, fig.height=8}
+# 2.1.2 scatterplot of detections vs tests
+
+respFinalPop.df %>% 
+  ggplot() +
+  # 2. Aesthetics
+  aes(x = tests, y = detections,
+      size = ...) +
+  # set text size
+  theme(text = element_text(size = 10)) +
+  
+  # 3. Scaling
+  ### 2.1.2 set the range for sizing our dots
+  scale_size(range = c(...), name = "Population size") + 
+  
+  # 4. Geoms
+  geom_point(alpha = 0.5)
+```
+
+------------------------------------------------------------------------
+
+## 2.2.0 Scale your axes to help see your data better
+
+While our bubbleplot does add some dimensionality to our visualization we can see a lot of values are bunched up together at the lower end of our scales and likewise we have a few values that are far out on our x/y axes. We'll probably want to further decrease our `alpha` value to account for how much overlap we are seeing. We can also spread out our data by transforming our axes to display values on a log~10~ scale. We have two places where we can accomplish this:
+
+1.  Transform your data directly ie `log(tests)`. Data will be placed on a log value scale but may have less meaning to the lay person.
+2.  Transform your scales/tick marks. The data is untouched and the values still have meaning to your audience without having to do conversions in their head.
+
+```{r, fig.width=16, fig.height=8}
+# 2.2.0 scatterplot of detections vs. tests on a log scale
+
+respFinalPop.df %>% 
+  ggplot() +
+  # 2. Aesthetics
+  aes(x = tests, y = detections,
+      size = population) +
+  # set text size
+  theme(text = element_text(size = 10)) +
+  
+  # 3. Scaling
+  ### 2.1.2 set the range for sizing our dots
+  scale_size(range = c(1, 10), name = "Population size") + 
+  
+  ### 2.2.0 Set the x and y-axis to log scales
+  ... + 
+  ... + 
+  
+  # 4. Geoms
+  geom_point(alpha = 0.2)
+```
+
+------------------------------------------------------------------------
+
+### 2.2.1 Avoid log-transforming values of 0!
+
+From our updated bubblplot it now becomes clear that there is an enormous range for tests and detections although perhaps a lot of the smaller populations are on the lower range of those scales. However, there appears to be a soft y-axis upper limit of about 10^5^, even as we approach the higher ranges of tests. We do also see another small problem that comes along with log transformation of our data.
+
+Look closely at our y-axis range and you'll see values that are below 1x10^0^ . While there may be values less than 1 in our dataset, we see many datapoints at or below 1x10^0^ which is 1! The issue here is that many of our datapoints have a `detections` value of 0. In R, if we attempt to take log~10~(0) we get `-Inf` because the value can't exist but rather approaches negative infinity. This creates a value range that doesn't necessarily exist in our dataset.
+
+We have two options in how we consider correcting this issue:
+
+1.  We can add a small value or ***pseudocount*** to all the 0 values in the dataset. This can be a common practice in datasets where we are counting a large range of values and having a small minimal value (0.1 to 1) added to each won't affect the outcome of analysis.
+2.  We can filter out our 0 values. This might be the case where adding a minimal value provides no benefit to the visualization/analysis or where adding a pseudocount can convey a *misleading* result. Note, however, that you could be losing valuable data here too!
+
+For our case, we will make a quick replacement to our data before plotting by replacing any values less than 1 to a minimum value of 0.1 in our dataset! We must remember, of course, that we can't have 0.1 detections in our dataset so interpreting our figure correctly will be important. In this case, it won't drastically affect our trends but it will clearly highlight the population of datapoints where testing for some viral groups resulted in zero positive detections.
+
+Note that we'll make quick use of the `if_else()` function in our `mutate()` call.
+
+```{r, fig.width=16, fig.height=8}
+# 2.2.1 scatterplot of detections vs tests, log-transformed without 0 values
+
+respFinalPop.df %>% 
+  
+  ### 2.2.1 Mutate detections to avoid values of zero
+  mutate(detections = ...(detections == 0 ,
+                              true = ..., 
+                              false = ...)) %>% 
+  
+  # 1. Data
+  ggplot() +
+  # 2. Aesthetics
+  aes(x = tests, y = detections,
+      size = population) +
+  # set text size
+  theme(text = element_text(size = 10)) +
+  
+  # 3. Scaling
+  ### 2.1.2 set the range for sizing our dots
+  scale_size(range = c(1, 10), name = "Population size") + 
+  
+  ### 2.2.1 Set the x and y-axis to log scales
+  scale_x_log10() + 
+  scale_y_log10() + 
+  
+  # 4. Geoms
+  geom_point(alpha = 0.2)
+```
+
+We can now clearly confirm that a large group of testing data resulted in no positive detections. However, there are also a large number of tests completed that result in fewer than nearly 100 detections in a batch of 100 tests! That would be a high positivity rate!
+
+::: {.alert .alert-block .alert-warning}
+**How do you interpret log-transformed data?:** After log-transforming both axes it looks like the relationship between tests and detections is leaning towards linear. While the transformation has improved the visualization, it has made the interpretation a little harder. Overall, in this situation, you'll either want to model against the untransformed data or do the math correctly and recognize that the relationship is a power function:
+:::
+
+\begin{equation*}
+    \begin{aligned}  
+\text{log} y &= B + a \text{log} x &\text{where B is the intercept of the vertical axis and a is the slope}\\[10pt]
+y &= 10^{(B + a \text{log} x)}\\[10pt]
+y &= 10^{B} 10^{a \text{log} x}\\[10pt]
+y &= 10^{B} x^{a} &\text{Recall that } y \text{ln} x = x^{y}\\[10pt]
+    \end{aligned}
+\end{equation*}
+
+------------------------------------------------------------------------
+
+## 2.3.0 Subsetting your data for a better view
+
+While we can gather some information here, there are still perhaps too many data points for a proper interpretation. Some approaches we could take include random subsetting, subsetting from a block, or binning our data through filtering.
+
+### 2.3.1 Quickly `slice()` your data
+
+One approach to quickly subsetting your data is with the `slice()` method which can take a `start:end` argument and effectively takes rows from `start` to `end` inclusive. You can also use it to quickly drop specific rows from your dataset. In fact, there are many ways you can use `slice()` and also [many variants of it](https://dplyr.tidyverse.org/reference/slice.html) in the `dplyr` package.
+
+Let's rerun our plot code but ***randomly slice*** 1000 datapoints instead using the `slice_sample()` function. Note that we must explicitly assign the number of samples to slice with the parameter `n`.
+
+```{r, fig.width=16, fig.height=8}
+# 2.3.1 Slice and use 1000 random datapoints for our figure
+
+# Set a seed for random sampling reproducibility
+set.seed(2026)
+
+respFinalPop.df %>% 
+  
+  ### 2.2.1 Mutate detections to avoid values of zero
+  mutate(detections = if_else(detections == 0 ,
+                              true = 0.1, 
+                              false = detections)) %>% 
+  
+  ### 2.3.1 Randomly slice 1000 samples
+  ... %>%
+  
+  # 1. Data
+  ggplot() +
+  # 2. Aesthetics
+  aes(x = tests, y = detections,
+      size = population) +
+  # set text size
+  theme(text = element_text(size = 10)) +
+  
+  # 3. Scaling
+  ### 2.1.2 set the range for sizing our dots
+  scale_size(range = c(1, 10), name = "Population size") + 
+  
+  ### 2.2.0 Set the x and y-axis to log scales
+  scale_x_log10() + 
+  scale_y_log10() + 
+  
+  # 4. Geoms
+  geom_point(alpha = 0.2)
+```
+
+------------------------------------------------------------------------
+
+Now we can see a little more we can ascertain from the pattern that:
+
+1.  Increasing tests does lead to increased detections but there is a clear upper upper limit on the slope of that relationship (in the log space)
+2.  Larger population sizes do appear to be associated with high tests numbers
+
+### 2.3.2 Bin your data with filtering!
+
+Whereas in the use of `slice_sample()` we were pretty indiscriminately pulling observations from our data, what if we wanted to compare a specific data range. For example, we could examine test values within a smaller range like 100-10K and see how widely detections can vary. To accomplish this, you need to combine predicates within a `filter()` call.
+
+```{r, fig.width=16, fig.height=8}
+# 2.3.2 Filter your data into a binned group
+
+respFinalPop.df %>% 
+  
+  # Mutate detections to avoid values of zero
+  mutate(detections = if_else(detections == 0 ,
+                              true = 0.1, 
+                              false = detections)) %>% 
+  
+  ### 2.3.2 Filter for salaries between 100 and 10000
+  filter(tests >= ..., tests <= ...) %>% 
+  
+  # 1. Data
+  ggplot() +
+  # 2. Aesthetics
+  aes(x = tests, y = detections,
+      size = population) +
+  # set text size
+  theme(text = element_text(size = 10)) +
+  
+  # 3. Scaling
+  # Set the range for sizing our dots
+  scale_size(range = c(1, 10), name = "Population size") + 
+  
+  # Set the x and y-axis to log scales
+  scale_x_log10() + 
+  scale_y_log10() + 
+  
+  # 4. Geoms
+  geom_point(alpha = 0.2)
+```
+
+------------------------------------------------------------------------
+
+Looking at the narrowed range of values between 100 and 10000 tests, it appears that the slope for the upper range of detections does appear to hold. Interestingly, it appears there is also an upper limit to the number of tests that can be run before detections begin to occur although that fact may be related to the nature of when/why tests are administered in the first place.
+
+As a whole, however, is there a trend or relationship to the datapoints? In our current range that may be less clear as datapoints remain too dense to determine this and eyeballing this isn't the most accurate way to determining the *distribution* of our data.
+
+### 2.3.3 Add a trendline to your data with the `geom_smooth()` layer
+
+Depending on the density of your datapoints, one common method of visualizing a trend in your data is to add a line of best fit. While this often requires further interpretation on its own, it is a quick way to visually assess if there is any relationship between two variables on your biplot.
+
+We can easily add a fitted line (aka a **model**) to our plot using the `geom_smooth()` layer. Based on your expectations, you can set the `method` parameter to a specific function to generate your model:
+
+-   `lm`: linear models drawing a simple y = ax+b line
+-   `loess`: local polynomial regression fitting which equates to a determining slope of the line at each point $x$ based on local/surrounding datapoints!
+
+You can read more about your [method options at the tidyverse website](https://ggplot2.tidyverse.org/reference/geom_smooth.html).
+
+For now, let's add a linear model to our plot and see if that gives us any more perspective. At the same time, we'll also move one of our `aes()` settings from the `aes()` layer to directly in the `geom_point()` layer. We'll talk more about ***why*** in Lecture 03!
+
+```{r, fig.width=16, fig.height=8}
+# 2.3.3 Add a line of best fit
+
+respFinalPop.df %>% 
+  
+  # Mutate detections to avoid values of zero
+  mutate(detections = if_else(detections == 0 ,
+                              true = 0.1, 
+                              false = detections)) %>% 
+  
+  # Filter for salaries between 100 and 10000
+  filter(tests >= 100, tests <= 10000) %>% 
+  
+  # 1. Data
+  ggplot() +
+  # 2. Aesthetics
+  aes(x = tests, y = detections,
+      size = population) +
+  # set text size
+  theme(text = element_text(size = 10)) +
+  
+  # 3. Scaling
+  # set the range for sizing our dots
+  scale_size(range = c(1, 10), name = "Population size") + 
+  
+  # Set the x and y-axis to log scales
+  scale_x_log10() + 
+  scale_y_log10() + 
+  
+  # 4. Geoms
+  geom_point(alpha = 0.2) +
+  
+  ### 2.3.3 Add a line of best fit but hide the legend
+  ...
+```
+
+Definitely a weak upward trend in our slope. From here, you could investigate and generate the actual linear model to check how significant this relationship is! It would also be great to take a closer look at the distribution of our data on a visual level, but how do we accomplish that?
+
+------------------------------------------------------------------------
+
+# 3.0.0 Distribution plots display frequency and spread across groups or intervals
+
+Many students are familiar with the classic bar chart. Thus far, we've already used it to some extent to look at our last lecture's sunshine data. When comparing groups or populations for differences in their distribution, however, the bar chart falls quite short of the ideal.
+
+When comparing distributions, we again are often concerned with summary statistics - mean, median, standard deviation, confidence intervals. The nature of our data, however, is often not continuous across an entire y-axis interval as a bar chart may suggest but rather our population is the result of values centred, with some variance, around a mean value.
+
+Over the remainder of the lecture we will compare and contrast 4 types of distribution plots for their relevance and when they may be most useful to visualize our data. When applicable to our data visualizations, we will also display all of our data points to better illustrate our distribution versus the visualization. We will examine:
+
+1.  Bar charts or Barplots
+2.  Density plots
+3.  Box and Whisker plots
+4.  Violin plots
+
+------------------------------------------------------------------------
+
+## 3.1.0 The barplot uses the `geom_bar()` or `geom_col()` to display data
+
+As we have already seen, the `geom_bar()` layer can be used to display our data in multiple ways. The height of the bar is proportional to either:
+
+1\. The number of observations of each group or
+
+2\. The sum of weights applied by a weight aesthetic
+
+In our **Lecture 01** examples we actually used the value of our observations (which was a summary data table) to determine height and proportions of our groups by setting the parameter `stat="identity"`. This was the application of a weighting based on the values of the y-axis variable we chose.
+
+A simpler way to accomplish this effect is with `geom_col()`, which already uses `stat_identity()` by default to calculate proportions.
+
+| geom | Description | Requirements |
+|:--:|:---|:---|
+| geom_bar() | Counts ***observations*** in your data and (by default) determines height as a proportion of total (by default) | Only accepts x OR y parameter in `aes()` |
+| geom_col() | Uses y-axis values as the height of each bar. | Requires both x AND y parameters in `aes()` |
+
+Both of these plots use `position="stack"` by default and proportions of height match observations or sums for multiple values sharing the same `x` position. Such instances can be displayed independently using `position="dodge"` or `position=dodge2`. This is only helpful, however, when the number of `x` values (ie categories) is lower, otherwise the graph becomes crowded.
+
+Let's begin with something simpler. We'll go back to our dataset, `respFinalPop.df` and filter for just a subset of our seasons, focusing in on the 2025-2026 data while also removing any observations for the nationwide values (aka Canada).
+
+We'll try to convey the total test attributed to each province for that year as a comparison to see which is "largest" using only the `geom_col()` layer.
+
+```{r, fig.width=20, fig.height=10}
+# 3.1.0 build a simply barchart of total salary per sector in 2023
+
+respFinalPop.df %>% 
+  # Filter for 2025-2026
+  filter(season %in% c("2025-2026"),
+         # Drop the Canada-wide data
+         reportingLaboratory != "Canada") %>% 
+  
+  # 1. Data
+  ggplot(.) +
+      # 2. Aesthetics
+      aes(x = reportingLaboratory, y = tests) +
+  
+      theme(text = element_text(size = 20)) + # set text size
+      theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+      # 4. Geoms
+      ### 3.1.0 Add our bars
+      ...
+```
+
+------------------------------------------------------------------------
+
+### 3.1.1 Use `reorder()` to sort your data as you plot it
+
+In the case of `respFinalPop`.df\` we can do a little better by ordering our x-axis of province by **total tests**. Since our data table is quite simple there are a number of ways to accomplish a sort:
+
+1.  Convert `reportingLaboratory` to a factor and use `fct_reorder()` to sort our factors.
+2.  Use the `reorder()` function while generating the plot.
+
+Let's sort our reportingLaboratory by total salary in **descending order** using our second choice `reorder()`. This takes a few parameters as follows:
+
+-   `x`: an atomic vector (usually a factor but not required) that you want to reorder
+
+-   `X`: a vector of the same length as `x` whose element-matched values will be used to determine the order of `x`
+
+-   `FUN`: the function you want to apply to `X` to reorder the values of `x`
+
+Note that the output of this function will be a vector of type `factor` for your values `x`.
+
+```{r, fig.width=20, fig.height=10}
+# 3.1.1 reorder your barplot on the fly
+
+respFinalPop.df %>% 
+  # Filter for 2025-2026
+  filter(season %in% c("2025-2026"),
+         # Drop the Canada-wide data
+         reportingLaboratory != "Canada") %>% 
+  
+  # 1. Data
+  ggplot(.) +
+      # 2. Aesthetics
+      ### 3.1.1 Use reorder() to alter how our data is displayed on the x-axis
+      aes(x = reorder(x = ..., 
+                      X = ...,
+                      # Use the sum function on the test values (X) based on grouping by "x" 
+                      FUN = ...),               
+          y = tests,
+          fill = reportingLaboratory
+          ) +
+  
+      theme(text = element_text(size = 20)) + # set text size
+      theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+      # 4. Geoms
+      # Add our bars
+      geom_col()
+```
+
+------------------------------------------------------------------------
+
+## 3.2.0 Barplots can help guide the eye
+
+From above, using the reordered barplots we can quickly gauge the difference between provinces as they get sorted by total tests administered. There's not much need to colour by province as well but it does add some emphasis to "Ontario" and further enforces the idea that we have sorted our provinces by total tests.
+
+What are we missing from this visualization that would help the reader? It would be nice to know *how many* people populate each province in that year. Knowing that population size would inform a bit more on the nature of the data were are seeing. Thus we can answer, is Ontario simply a much larger pool of individuals, hence the higher number of tests?
+
+### 3.2.1 Use the `fill` parameter to show quantitative data
+
+One simple way to enhance our barplot is through the use of fill colour. By setting the `fill` parameter based on the population in each sector we can shade each bar for a visual assessment of total individuals. One way to accomplish this is to `summarise()` our data by province before passing it along for visualization.
+
+```{r, fig.width=20, fig.height=10}
+# 3.2.1 shade bars by a continuous value
+
+respFinalPop.df %>% 
+  # Filter for 2025-2026
+  filter(season %in% c("2025-2026"),
+         # Drop the Canada-wide data
+         reportingLaboratory != "Canada") %>% 
+  # Reorder the reporting lab factor
+  mutate(reportingLaboratory = reorder(x = reportingLaboratory, X = -tests, FUN = sum)) %>% 
+  # group base don reporting lab
+  group_by(reportingLaboratory) %>% 
+  # Summarize the data based on total tests and population size
+  summarise(totalTests = sum(tests), 
+            population = population[1]) %>% 
+  
+  # 1. Data
+  ggplot(.) +
+      # 2. Aesthetics
+      aes(x = reportingLaboratory,               
+          y = totalTests,
+          ### 3.2.1 Set the fill colour to a variable!
+          fill = ...
+          ) +
+  
+      theme(text = element_text(size = 20)) + # set text size
+      theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+      # 4. Geoms
+      # Add our bars
+      geom_col()
+```
+
+------------------------------------------------------------------------
+
+### 3.2.2 Add extra `geom_*` layers to more accurately reflect values
+
+As you can see from above the shading does help us determine that our largest overall payout does go to the largest group. However, unless you have a very good eye for shades, we can't see the full detail of our province sizes. We can still see that Ontario has a much higher population but how similar in size are Saskatchewan through to Newfoundland on our figure?
+
+Instead of fill colour, we can add a little detail by layering an additional geom. In this case, we will use `geom_point()` to add the population of each sector *after* scaling it 20:1.
+
+::: {.alert .alert-block .alert-info}
+**Why scale population size down by 20?** Why did we choose to scale the size of each province to 20:1? This is more of a decision based on what we know about the data already. We already know our y-axis **totalTests** data scales from 0 to 6x10^5^. Knowing the populations of our provinces can range from 41,919 to 16,191,372, it makes sense to try and get our values along the same scale.
+:::
+
+```{r, fig.width=20, fig.height=10}
+# 3.2.2 add points to represent province size
+
+respFinalPop.df %>% 
+  # Filter for 2025-2026
+  filter(season %in% c("2025-2026"),
+         # Drop the Canada-wide data
+         reportingLaboratory != "Canada") %>% 
+  # Reorder the reporting lab factor
+  mutate(reportingLaboratory = reorder(x = reportingLaboratory, X = -tests, FUN = sum)) %>% 
+  # group base don reporting lab
+  group_by(reportingLaboratory) %>% 
+  # Summarize the data based on total tests and population size
+  summarise(totalTests = sum(tests), 
+            population = population[1]) %>% 
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x = reportingLaboratory,               
+        y = totalTests,
+        fill = population
+        ) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+
+    # 4. Geoms
+    ### 3.1.0 Add our bars
+    geom_col() +
+
+    ### 3.2.2 Add points to represent sector size
+    geom_point(aes(y=..., colour=...), size = 5) 
+```
+
+------------------------------------------------------------------------
+
+### 3.2.3 The lollipop plot: a sweet twist on the barplot.
+
+Now we have more clarity on populations sizes between provinces, answering our question about the difference in province sizes. We can see, for instance that Alberta has a slightly smaller estimated population than British Columbia even though Alberta performs nearly 30% more tests! To publish this figure we would want to fix a few additional things like the legend presentation, the axis names and their titles and perhaps spruce up the colours. We'll drill into these ideas more during our ***next lecture!***
+
+On this same topic, let's visit one last plot that can use some pieces from the two variants of barplots we've used. The lollipop graph clarifies that x-axis values are more singular in nature rather than spanning a range while still visually connecting those y-axis values to their x-axis categories.
+
+It looks very much like it sounds, and we'll add an extra twist to ours by setting the point size to the province size, giving it just a bit more of informational dimension. To accomplish this visualization we'll combine a `geom_point()` with a `geom_segment()`.
+
+Note that the `geom_segment()` layer requires pairs of both the x and y values as arguments (`x`, `xend`, `y`, and `yend`).
+
+::: {.alert .alert-block .alert-warning}
+**Aesthetics when working with multiple geoms:** As you'll see in the following code, we've made some adjustments due to working with multiple **geom\_\*** layers. Since there can be overlapping aesthetics between geoms, you need to be cognizant of their effects. Rather than set these parameters in the **aes()** layer, set them directly in their respective geoms.
+:::
+
+```{r, fig.width=20, fig.height=10}
+# 3.2.3 Generate a lollipop chart
+
+respFinalPop.df %>% 
+  # Filter for 2025-2026
+  filter(season %in% c("2025-2026"),
+         # Drop the Canada-wide data
+         reportingLaboratory != "Canada") %>% 
+  # Reorder the reporting lab factor
+  mutate(reportingLaboratory = reorder(x = reportingLaboratory, X = -tests, FUN = sum)) %>% 
+  # group base don reporting lab
+  group_by(reportingLaboratory) %>% 
+  # Summarize the data based on total tests and population size
+  summarise(totalTests = sum(tests), 
+            population = population[1]) %>% 
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x = reportingLaboratory,               
+        y = totalTests,
+        ) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 3. Scaling
+    # Use this layer to set the size range of your datapoints
+    scale_size(range = c(3, 10), name = "Province\nsize") +
+
+    # 4. Geoms
+    ### 3.2.3 Make the stick of the lollipop
+    geom_segment(aes(x=..., xend=..., 
+                     y=..., yend=...)) +
+    
+    ### 3.2.3 Add points to represent sector size
+    geom_point(aes(size = ...), colour = "orchid")
+```
+
+------------------------------------------------------------------------
+
+## 3.3.0 Barplots to convey proportion or composition
+
+Let's revisit a version of our bar graphs to begin exploring a slightly bigger picture for our data, looking how all of the data fits together. Thus far we have explored the overall number of tests per province, but we don't know the composition of what is being tested.
+
+Using barplots, we can explore composition and proportions. Let us combine the observations for each virus to help convey an added dimension to our data.
+
+The key to our following figure is in the `aes()` layer where we set:
+
+-   `fill`: using this will set our bars to stack by some categorical variable in our data
+
+```{r, fig.width=20, fig.height=10}
+# 3.3.0 simple bar chart of tests vs province
+
+respFinalPop.df %>% 
+  # Filter for 2025-2026
+  filter(season %in% c("2025-2026"),
+         # Drop the Canada-wide data
+         reportingLaboratory != "Canada") %>% 
+  # Reorder the reporting lab factor
+  mutate(reportingLaboratory = reorder(x = reportingLaboratory, X = -tests, FUN = sum)) %>% 
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x = reportingLaboratory,               
+        y = tests,
+        fill = ...      ### 3.3.0 Using the fill option will create a stacked barplot
+        ) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 4. Geoms
+    ### 3.3.0 Start with a simple bar graph
+    ...
+```
+
+------------------------------------------------------------------------
+
+### 3.3.1 Change the positioning of subgroups in your data with the `position` parameter of `geom_col()`
+
+Taking a quick look at the overall result, there's a lot of more information here. From this graph, we can quickly see just how provinces have choses to prioritize or distribute their testing based on specific viral groups. In many of our provinces, for instance, we can see a bias towards having proportionally more tests for Influenza, RSV, and SARS-CoV-2 - at least in the current season.
+
+One problem we encounter, however, is that our smaller provinces are much harder to analyse in terms of their proportions. Because of their overall totals, we can't confirm thes trends we see in the larger provinces which have more tests completed! To solve our problem, let's take advantage of the `geom_col()` parameter `position` which has some possible values including via [layer position adjustments](https://ggplot2.tidyverse.org/reference/layer_positions.html):
+
+-   `position_stack()`: this is the default and what see above where each fill category has been stacked one upon another
+
+-   `position_dodge()`: this separates each fill category into it's own separate small bar
+
+-   `position_fill()`: this can give proportions of the whole for each subgroup at every x-position on the figure. This essentially normalizes each x-category position within itself.
+
+Let's give `position_fill()` a try and see how that updates our figure
+
+```{r, fig.width=20, fig.height=10}
+# 3.3.1 simple bar chart of tests vs province
+
+respFinalPop.df %>% 
+  # Filter for 2025-2026
+  filter(season %in% c("2025-2026"),
+         reportingLaboratory != "Canada") %>% 
+  mutate(reportingLaboratory = reorder(x = reportingLaboratory, X = -tests, FUN = sum)) %>% 
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x = reportingLaboratory,               
+        y = tests,
+        fill = virus
+        ) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 4. Geoms
+    ### 3.3.1 present each sector as a proportion of the whole for each year on the x-axis
+    geom_col(position = ...)
+```
+
+What a difference that single parameter can make. Now, we can see more interesting details like:
+
+-   Newfoundland and the Northwest Territories appear to have very even distribution of testing for their respiratory virus groups! What do you think influences this result?
+
+-   Nunavut and the Yukon also have even distributions in their testing BUT they only appear to test for Influenza, RSV, and SARS-CoV-2. You would have seen this result in your assignments from last lecture!
+
+*What kind of trends would we see in previous seasons?*
+
+------------------------------------------------------------------------
+
+### 3.3.2 Alter the width of your stacks and dodge your barplots!
+
+Some last things to keep in mind when working with your barplots is that you are not explicitly required to stack them. You can in fact, split your subgroups into a side-by-side comparison. In this case, we could see all viruses are their own barplots for each province! This can make most sense when you are working with smaller x-axis ranges and can give you a bit of different spin on how your plots look. To accomplish this, use the `position` parameter and set it to `position_dodge()` or `position_dodge2()` instead. The latter is especially helpful when dodging for `geom_boxplot()` which may have variable widths. We'll get more into that later!
+
+At the same time, we'll explore the `width` parameter (default value = 0.9) which allows you to alter the thickness of your bars. Sometimes this just allows you to add more space between your bars if it feels overcrowded, but can also come in handy when dodging your barplots. You can also use this parameter to make your bars overlap!
+
+Lets focus in on Ontario over the past 4 seasons and see what's been going on.
+
+```{r, fig.width=20, fig.height=10}
+# 3.3.2 Dodging your barplots
+
+respFinalPop.df %>% 
+  # Filter for 2025-2026
+  filter(reportingLaboratory == "Ontario") %>% 
+  mutate(reportingLaboratory = reorder(x = reportingLaboratory, X = -tests, FUN = sum)) %>% 
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x = season,               
+        y = tests,
+        fill = virus
+        ) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 4. Geoms
+    # Start with a simple bar graph
+    geom_col(position = ..., width = ...)
+```
+
+Wow, while it looked like Ontario was leading the pack in tests for 2025-2026, look how many were performed in 2023-2024! Certainly an unexpected result.
+
+Note how altering the `width` parameter doesn't change the distance between our mini-bars but it does alter the distance between our groups by season!
+
+------------------------------------------------------------------------
+
+## 3.4.0 Convert your plots to a circular layout with `coord_polar()`
+
+Generally speaking there are a number of circular or polar coordinate plot variants ranging in complexity from the pie chart to a racetrack chart. The `coord_polar()` layer takes a few parameters:
+
+-   `theta`: determines if angles will be mapped to the x or y variable
+-   `start`: offset from the "12 o'clock" position
+-   `direction`: 1 = clockwise, -1 = counter-clockwise
+
+Here's a summary
+
+| Chart name | Plot description | Uses | Cartesian analog |
+|:---|:---|:---|:---|
+| Pie chart | Sliced up proportions of a circle | Simple proportion comparison between groups | single bar variant |
+| Nightingale/Coxcomb plot | Intervals are equal wedges but shaded areas represent proportions | Intervals with additional categorical proportions | Stacked column plot, theta=x |
+| Race track plot | Intervals are split concentrically to form rings of equal width | Helpful if some groups are less diverse | Stack column plot, theta=y |
+
+------------------------------------------------------------------------
+
+### 3.4.1 Pie charts work best with simple data
+
+From our pie chart description and from your own experience, you can recall that pie charts aren't helpful with complex data. Once the number of categories surpasses 6-8 groups, things can get hard to visually digest - especially if one category dominates the others.
+
+Let's continue with `respFinalPop.df` but focus in again on 2025-2026 to get a breakdown of testing by virus. We'll group and summarise our data again before passing it along to `ggplot()`. The key here will be converting a `geom_bar()` barplot to a pie chart using the `coord_polar()` layer. The `coord_polar()` layer will take an argument for the parameters `theta` which can be set to the x- or y-axis.
+
+To accomplish this feat it helps to think about how the data is being handled. If you think about a pie chart, you can imagine it much like a stacked barplot where the top and bottom have been curved around to meet each other so we are connecting our bar along the y-axis! This is a plot all about *proportions* and instead of having an x-axis defined, it is the proportions for a single category or group.
+
+Therefore, we set the `aes()` parameter `x` to a value of `""` so there are no categorical values for `x` but you will still need to set a `y` value from which to determine those proportions.
+
+Note that we are introducing two common layers to help with titles in our figure: `ggtitle()` and `guides()`. We won't discuss these in detail here but they can basically add titles to your plot and legend respectively.
+
+We will also briefly introduce `scale_fill_viridis_d()` to our figures. This layer comes from the `viridis` package which contains a number of colour-blind friendly patterns that can also be used to create more grey-scale accurate colour gradients as well!
+
+```{r, fig.width=8, fig.height=8}
+# 3.4.1 Building a simple pie chart
+
+respFinalPop.df %>% 
+  # Filter for 2025-2026
+  filter(season %in% c("2025-2026"),
+         # restrict lab reporting data to Ontario
+         reportingLaboratory == "Ontario") %>% 
+  group_by(virus) %>% 
+  # Summarize the total tests per virus
+  summarize(totalTests = sum(tests)) %>% 
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x = "",               
+        y = totalTests,
+        fill = virus
+        ) +
+
+    theme_void() + # This will remove all background theme objects
+    theme(text = element_text(size = 14)) + # set text size
+
+    guides(fill = guide_legend(title="Viral group")) +
+    ggtitle("Proportion of total tests by viral group in Ontario for 2025-2026") +
+  
+    # 4. Geoms
+    # Start with a simple bar graph
+    geom_col(colour = "white") +
+
+    # 7 Coordinate system
+    ### 3.4.1 Map angles to the Y-axis
+    ...
+```
+
+------------------------------------------------------------------------
+
+### 3.4.2 Nightingale rose charts emphasize proportions
+
+Made famous by [Florence Nightingale](https://en.wikipedia.org/wiki/Florence_Nightingale), these plots (which she named [coxcomb plots](https://datavizcatalogue.com/methods/nightingale_rose_chart.html)) were used to help emphasize the proportions of soldier deaths due to infection during the Crimean war. Each circular increment is equally spaced to represent increasing values along the y-axis. Visually, this gives more area representation as we radiate outwards on the chart. This produces a chart that
+
+1.  Makes distinguishing larger proportions more obvious.
+2.  Adds a new dimension to the pie chart, allowing us to create intervals for comparison.
+3.  Helps connect our start and end category, especially if they don't represent an ordinal or continuous scale.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Nightingale-mortality.jpg?raw=true" width="1000"/>
+
+Florence Nightingale's original rose chart/coxcomb plot publication. Sourced from the [Wikimedia commons](https://commons.wikimedia.org/wiki/File:Nightingale-mortality.jpg)
+:::
+
+::: {.alert .alert-block .alert-warning}
+**Know your y-limits!** Outer segments disproportionately represent increases in value. Their larger area produces more visual emphasis despite the linear scale of the y-axis. Due to the disproportionate area increases with increasing y-axis values, you need to consider the *range* of your data.
+:::
+
+Let's extend our pie chart into a coxcomb chart where we'll explore data Ontario data for 2024-2025. To convert to our coxcomb plot, we'll have to tweak our `coord_polar()` call to map our angles along the x-axis instead of y-axis.
+
+We'll add in the `xlab()` and `ylab()` layers so we can rename our x- and y-axis titles as well. You may also notice a couple of extra calls to the `theme()` layer and we'll spend plenty of time next lecture discussing how to best uses these layers to customize your plots!
+
+For our next plot, we'll switch to the 2024-2025 season which has a more complete set of data in terms of timepoints.
+
+```{r, fig.width=20, fig.height=20}
+# 3.4.2 Building our first coxcomb plot
+
+respFinalPop.df %>% 
+  # Filter for 2024-2025
+  filter(season == "2024-2025",
+         # restrict lab reporting data to Ontario
+         reportingLaboratory == "Ontario") %>% 
+  
+  # Reset the factors for month to follow the season start and end
+  mutate(month = ...(month, levels = c("Sep", "Oct", "Nov", "Dec", "Jan", 
+                        "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"))) %>% 
+  
+  # Group data by month and virus
+  group_by(month, virus) %>% 
+  # Generate a summary of tests per group
+  summarize(totalTests = sum(tests)) %>% 
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x = month,               
+        y = totalTests,
+        fill = virus
+        ) +
+
+    theme_bw() + # make the theme more plain
+    theme(text = element_text(size = 20)) + # set text size
+    theme(panel.grid.major.y = element_line(color="grey60")) + # darken our major y grid
+
+    xlab("Month") + # Set the x-axis label
+    ylab("Total Tests") + # Set the y-axis label
+    ggtitle("Total tests 2024-2025") +
+  
+    guides(fill = guide_legend(title="Viral group")) +
+    ggtitle("Proportion of total tests in Ontario by month in 2024-2025") +
+  
+    # 3. Scaling
+    scale_fill_viridis_d() + # the "d" stand for discrete colour scale
+    # 4. Geoms
+    # White as a colour will be used to separate stacks in the bar graph!
+    geom_col(colour = "white") +
+
+    # 7 Coordinate system
+    ### 3.4.2 Map angles to the X-axis
+    coord_polar(theta=...)
+```
+
+Looking at our Nightingale plot, we can see how much emphasis is put on larger portions within each stacked bar. It does, however, draw our attention to how the winter months of the season have more tests completed than the summer months. Does that track with our expectations of respiratory viruses?
+
+Just be careful, because:
+
+1.  Too many x-axis categories can overcrowd your plot
+
+2.  Having a large range of values in your y-axis (especially between x-axis categories) can also make it very hard to read your/distinguish smaller parts of your stack.
+
+------------------------------------------------------------------------
+
+### 3.4.3 Racetrack plots are an aesthetic variant of the bar chart
+
+You want to make another cool chart from a boring bar chart. Stacked or otherwise, you can convert those bar plots to a racetrack or radial bar chart. The only difference between the coxcomb plot and radial bar chart is that instead of the default `theta="x"` we set it to `y`. Like flipping the coordinates for a bar chart.
+
+::: {.alert .alert-block .alert-warning}
+**Beware the racetrack transformation:** This is an aesthetic transformation where each bar gets relatively longer as you move from inside to out. Therefore, values must be judged by radians! Our eyes can more precisely judge differences on a Cartesian bar chart. Thus when viewing these types of charts, don't be misled by how they look at a casual glance!
+
+Why use this plot at all? It can, in some cases be more compact than a regular bar chart and because of its nature, when used shrewdly, can sometimes help to elevate smaller groups to make their values more pronounced or distinguishable.
+:::
+
+Let's make a set of barchart data and compare it to the racetrack plot. Note that negative values in our dataset are plotted separately. It is an implementation quirk of `ggplot`.
+
+```{r, fig.width=16, fig.height=8}
+# 3.4.3 Generate a coord-flipped cartesian plot of our last figure
+
+respFinalPop.df %>% 
+  # Filter for 2024-2025
+  filter(season == "2024-2025",
+         # restrict lab reporting data to Ontario
+         reportingLaboratory == "Ontario") %>% 
+  
+  # Reset the factors for month to follow the season start and end
+  mutate(month = factor(month, levels = c("Sep", "Oct", "Nov", "Dec", "Jan", 
+                        "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"))) %>% 
+  
+  # Group data by month and virus
+  group_by(month, virus) %>% 
+  # Generate a summary of tests per group
+  summarize(totalTests = sum(tests)) %>% 
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x = month,               
+        y = totalTests,
+        fill = virus
+        ) +
+
+    theme_bw() + # make the theme more plain
+    theme(text = element_text(size = 20)) + # set text size
+    theme(panel.grid.major.y = element_line(color="grey60")) + # darken our major y grid
+
+    guides(fill = guide_legend(title="Virus")) +
+    xlab("Month") + # Set the x-axis label
+    ylab("Total Tests") + # Set the y-axis label
+    ggtitle("Total tests 2024-2025") +
+  
+    # theme_void() + # This will remove all background theme objects
+    # theme(text = element_text(size = 14)) + # set text size
+
+    guides(fill = guide_legend(title="Viral group")) +
+    ggtitle("Proportion of total tests in Ontario by month in 2024-2025") +
+
+    # 3. Scaling
+    scale_fill_viridis_d() + # the "d" stands for discrete colour scale
+    ### 3.4.3 Flip our bars to the y-axis
+    ... +
+
+    # 4. Geoms
+    # Start with a simple bar graph
+    geom_col(colour = "white", width = 0.9)
+```
+
+Now just imagine what our figure would look like if we could connect the right side of the bars to the left side!
+
+```{r, fig.width=20, fig.height=10}
+# 3.4.3b Switch up the plot to a racetrack plot
+
+respFinalPop.df %>% 
+  # Filter for 2024-2025
+  filter(season == "2024-2025",
+         # restrict lab reporting data to Ontario
+         reportingLaboratory == "Ontario") %>% 
+  
+  # Reset the factors for month to follow the season start and end
+  mutate(month = factor(month, levels = c("Sep", "Oct", "Nov", "Dec", "Jan", 
+                        "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"))) %>% 
+  
+  # Group data by month and virus
+  group_by(month, virus) %>% 
+  # Generate a summary of tests per group
+  summarize(totalTests = sum(tests)) %>% 
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x = month,               
+        y = totalTests,
+        fill = virus
+        ) +
+
+    theme_bw() + # make the theme more plain
+    theme(text = element_text(size = 20)) + # set text size
+    theme(panel.grid.major.y = element_line(color="grey60")) + # darken our major y grid
+
+    guides(fill = guide_legend(title="Virus")) +
+    xlab("Month") + # Set the x-axis label
+    ylab("Total Tests") + # Set the y-axis label
+    ggtitle("Total tests 2024-2025") +
+  
+    # theme_void() + # This will remove all background theme objects
+    # theme(text = element_text(size = 14)) + # set text size
+
+    guides(fill = guide_legend(title="Viral group")) +
+    ggtitle("Proportion of total tests in Ontario by month in 2024-2025") +
+
+    # 3. Scaling
+    scale_fill_viridis_d() + # the "d" stands for discrete colour scale
+
+    # 4. Geoms
+    # Start with a simple bar graph
+    geom_col(colour = "white", width = 0.9) +
+
+    # 7 Coordinate system
+    ### 3.4.3 Map angles to the y-axis
+    coord_polar(theta = ...)
+```
+
+------------------------------------------------------------------------
+
+### 3.4.4 Barplots and their variants summarize the distribution of data between groups or intervals but NOT within single populations.
+
+Often for our purposes as scientists, we are more concerned with the distribution of replicates or measurements as a population *within* a group whilst also comparing across other groups (ie control vs treatment). Naively, we are tempted by the convenience of Excel to simplify our data as a bar chart with some simple standard deviation or error bars. One word concisely describes this behaviour:
+
+$$\text{Inappropriate}$$
+
+Note from our examples that although we are comparing provinces, our datapoints represent single or total observations separated either by group or by time. At each x-axis point we are not comparing the distribution between categories in a meaningful way. In fact, from our first example, we can convey a *near-exact* message using a dot-plot! In essence these visualizations are communicating the categorization of samples across multiple groups. More or less, this is about visualizing *proportions*.
+
+::: {.alert .alert-block .alert-danger}
+**Section 3.0.0 Comprehension Question:** After exploring the racetrack variant above, visualizing our Ontario data ranging from the 2024-2025 season, what is the biggest issue you might see? What would be one way to remedy this? Is this an appropriate visualization of our data?
+:::
+
+```{r, fig.width=20, fig.height=20}
+# Code your plot here!
+```
+
+------------------------------------------------------------------------
+
+# 4.0.0 Density plots compute a theoretical distribution
+
+What is the shape of our data? When we encounter experimental populations and begin sampling or measuring for specific characteristics, we inevitably begin to reveal whether or not that characteristic has a predictable range, median value, etc. Density plots, once given enough sample values, begin to predict the shape or distribution of that sampling. We sometimes use this to represent the theoretical distribution of our original populations.
+
+## 4.0.1 Distribution plots need appropriate data
+
+In contrast to our previous datasets, we are interested in dissecting group characteristics after sampling multiple times. In this case, we have an interesting dataset for comparison because we can look at the distribution of **positivity** for viruses across time or specific regions in our data. We can explore questions like do some provinces exhibit higher mean positivity across a season? Are there specific periods where trends exist or change?
+
+We have many observations we can compare in each group and these datapoints can give us a window into how positivity changes down to a weekly basis.
+
+## 4.1.0 Density and histogram plots model distribution of samples or individuals within a population
+
+While bar plots help to focus on proportional representation for categorical data, both density plots and histograms can be used to convey the frequency or distribution of values for a variable across its specified range. When comparing distributions visualized this way, you can usually compare up to 3 or 4 on the same plot before the data becomes too crowded. These methods also give you a sense of your data before moving forward with more detailed analyses. You can also identify possible mistakes or artefacts in data collection.
+
+::: {.alert .alert-block .alert-warning}
+**How much data do I need?** Density plots can be thought of as smoothed versions of histograms which have been binned in small intervals. **Density plots** of a single dimension require a ***minimum of 4 samples*** but justifying a KDE on a sample size that small is hard. **Histograms** are recommended to have ***at least 30 observations*** to be considered useful and I would apply this rule of thumb to KDEs as well.
+:::
+
+Let's compare positivity for a few virus groups for a whole monitoring season. We'll re-filter our data to look at just the 2024-2025 season and look at just EV/RV, Influenza, and SARS-CoV-2. In this figure we'll introduce 2 geoms:
+
+-   `geom_density()`: this is the layer we can use to create a kernel density estimate. In theory, the area under each curve should be 1 as they represent the probability of any salary value within a range of the data.
+
+-   `geom_rug()`: this simple geom will sit outside our plot in what would be considered the "margins" of the plot. Each vertical line will represent an actual observation from the data.
+
+```{r, fig.width=20, fig.height=10}
+# 4.1.0 Generate a kernel density estimate with a rug
+
+respFinalPop.df %>% 
+  # Filter for 2024-2025 data
+  filter(season == "2024-2025",
+         # Remove Canada-wide data
+         reportingLaboratory != "Canada",
+         # Filter for 3 specific viruses
+         virus %in% c("EV/RV", "Influenza", "SARS-CoV-2")) %>%
+  
+  # 1. Data
+  ggplot() + 
+  
+      # 2. Aesthetics
+      aes(x = percentPositive, fill = virus) +
+  
+      theme_bw() + # make the theme more plain
+      theme(text = element_text(size = 20)) + # set text size
+      theme(panel.grid.major.y = element_line(color="grey60")) + # darken our major y grid
+    
+      guides(fill = guide_legend(title="Public sector")) +
+      xlab("Positivity") + # Set the x-axis label
+      ylab("Density") + # Set the y-axis label
+      ggtitle("Weekly positivity distribution of EV/RV, Influenza, and SARS-CoV-2 in 2024-25") +
+    
+      # 3. Scaling
+      scale_fill_viridis_d() + # the "d" stands for discrete colour scale
+      scale_colour_viridis_d() +
+
+      # 4. Geoms
+      ### 4.1.0 Add a density plot
+      ...(alpha = 0.5) + # Plot the density estimates
+      ### 4.1.0 Add a rug plot to the x-axis margin
+      ...(aes(colour = virus))
+```
+
+Looking at our 3 chosen viruses, we see some interesting density plots.
+
+-   SARS-CoV-2 has over half of its distribution above \~2.5% positivity. That means for over half of the year, the levels of SARS-CoV-2 are more than 2.5% across Canadian provinces!
+
+-   Influenza on the other hand, has a lower positivity peak but you can see it's distribution is very assymetrical with a very long tail to the right. Some values get above 40%
+
+-   Similarly EV/RV has shallower peak somewhere around 13% again with a very long tail to the right and some very high values. Given how shifted it's peak is, one might surmise that this virus has a much higher base positivity throughout the season. If you haven't looked it up already, this group of viruses includes the common cold and bronchitis so it's a pretty broad group!
+
+------------------------------------------------------------------------
+
+### 4.1.1 Apply the `after_stat()` function to scale your data
+
+There are a number of `after_*()` functions that can be applied to your plots. The overall purpose of these is to influence the aesthetics parameters (ie x, y, fill, colour, etc) based on some post-`geom()` transformations of your data. For instance, we know that `geom_bar()` counts up observations for category in the x-axis. You can use `after_stat(count)` to extract the total observations per x-axis category as a computed variable.
+
+Looking carefully at the documentation of each `geom_*()`, you will find which computed variables are calculated by each specific `geom`. For `geom_density()` we can extract density, number of points, and a scaled density estimate.
+
+Let's look at using `after_stat(scaled)` to set our y-axis range of values in our previous geom to between 0 and 1.
+
+```{r, fig.width=20, fig.height=10}
+# 4.1.1 normalize or scale our KDEs
+
+respFinalPop.df %>% 
+  # Filter for 2024-2025 data
+  filter(season == "2024-2025",
+         # Remove Canada-wide data
+         reportingLaboratory != "Canada",
+         # Filter for 3 specific viruses
+         virus %in% c("EV/RV", "Influenza", "SARS-CoV-2")) %>%
+  
+  # 1. Data
+  ggplot() + 
+  
+      # 2. Aesthetics
+      aes(x = percentPositive, fill = virus) +
+  
+      theme_bw() + # make the theme more plain
+      theme(text = element_text(size = 20)) + # set text size
+      theme(panel.grid.major.y = element_line(color="grey60")) + # darken our major y grid
+    
+      guides(fill = guide_legend(title="Virus")) +
+      xlab("Positivity") + # Set the x-axis label
+      ylab("Density") + # Set the y-axis label
+      ggtitle("Weekly positivity distribution of EV/RV, Influenza, and SARS-CoV-2 in 2024-25") +
+    
+      # 3. Scaling
+      scale_fill_viridis_d() + # the "d" stands for discrete colour scale
+      scale_colour_viridis_d() +
+      # xlim(0, 20) +
+
+      # 4. Geoms
+      ### 4.1.1 scale the KDE plot
+      geom_density((aes(...)), 
+                   alpha = 0.5) + # Plot the density estimates
+  
+      # Add a rug plot to the x-axis margin
+      geom_rug(aes(colour = virus))
+```
+
+By setting the `after_stat()` option in our density plot, now all of our densities have a maximum height of 1. This can make it easier to see all of our densities at the same height. This is especially helpful when some are very skewed or have very long tails making them much "lower" without scaling. Now you can more easily compare the shape of your distributions directly.
+
+**Note:** the *area under the curves of each*, however, is no longer summed to 1 and thus **interpretation of the individual distributions is not recommended**.
+
+------------------------------------------------------------------------
+
+### 4.1.2 Apply a `facet_*()` to view KDEs separately
+
+As you can see from above, if we were to have more and more viruses or other groups, it may be better to separate them out in order to avoid too much overlap. It may also be to our advantage to compare them in a more vertical fashion. Recall that there are two layers we can choose from: `facet_wrap()` and `facet_grid()`. They are differentiated by the following characteristics:
+
+-   `facet_wrap()`: Data is split based on available data combinations of the `facets` parameter which can be defined by a formula like `~var1+var2` or by using the quoting function `vars(var1, var2)`. In either case, the data is then *grouped by* your variables. Panels are placed in a single ribbon that wraps around based on the arguments in the `ncol` and `nrow` parameters.
+-   `facet_grid()`: Data is split based on the ***1 or 2-dimensional*** combination of facet variables. Even combinations for which there is no data will be displayed as empty panels. Use the `rows` and `cols` parameters to set the facets by using the `vars()` quoting function. Note that you could further group your rows and/or columns by *multiple variables*.
+
+Note we'll also use another parameter in both called `scales` where we can determine if panels should share axis scales or change them based on individual panel data in the y-axis (`free_y`), x-axis (`free_x`) or both (`free`),
+
+Let's first use `facet_wrap()` to generate a single-column facet of KDEs based on virus positivity 2024-2025 of our dataset.
+
+```{r, fig.width=20, fig.height=20}
+# 4.1.2 Switch up the plot to a faceted KDE plot
+
+respFinalPop.df %>% 
+  # Filter for 2024-2025 data
+  filter(season == "2024-2025",
+         # Filter out Canada-wide data
+         reportingLaboratory != "Canada") %>%
+  
+  # 1. Data
+  ggplot() + 
+  
+      # 2. Aesthetics
+      aes(x = percentPositive, fill = virus) +
+  
+      theme_bw() + # make the theme more plain
+      theme(text = element_text(size = 20)) + # set text size
+      theme(panel.grid.major.y = element_line(color="grey60")) + # darken our major y grid
+    
+      guides(fill = guide_legend(title="Virus")) +
+      xlab("Positivity") + # Set the x-axis label
+      ylab("Density") + # Set the y-axis label
+      ggtitle("Weekly positivity distribution of viruses in 2024-25") +
+    
+      # 3. Scaling
+      scale_fill_viridis_d() + # the "d" stands for discrete colour scale
+
+      # 4. Geoms
+      ### 4.1.2 Note how we no longer need to scale our y-axis?
+      geom_density(alpha = 0.5) + # Plot the density estimates
+
+      # 6. Facets
+      ### 4.1.2 Add a simple facet wrap, with each sector group existing in its own row
+      facet_wrap(..., 
+                 scales=..., 
+                 ncol=1)
+```
+
+------------------------------------------------------------------------
+
+### 4.1.3 Use `facet_grid()` to view multiple periods of our data
+
+If, for example we wanted to directly compare the data from multiple seasons (2024-25 and 2025-26), we could alter the above plot so that our two years are paneled beside each other. This can be accomplished with the `facet_grid()` layer which will allow us to name both a `rows` and `cols` grouping parameter.
+
+Let's update our figure so that we split our rows by `virus` and our columns by `season`.
+
+```{r, fig.width=20, fig.height=20}
+# 4.1.3 Switch up the plot to a racetrack plot
+
+respFinalPop.df %>% 
+  # Filter for 2024-2026 data
+  filter(season %in% c("2024-2025", "2025-2026"),
+         # Filter out Canada-wide data
+         reportingLaboratory != "Canada") %>%
+  
+  # 1. Data
+  ggplot() + 
+  
+      # 2. Aesthetics
+      aes(x = percentPositive, fill = virus) +
+  
+      theme_bw() + # make the theme more plain
+      theme(text = element_text(size = 20)) + # set text size
+      theme(panel.grid.major.y = element_line(color="grey60")) + # darken our major y grid
+    
+      guides(fill = guide_legend(title="Virus")) +
+      xlab("Positivity") + # Set the x-axis label
+      ylab("Density") + # Set the y-axis label
+      ggtitle("Weekly positivity distribution of viruses across seasons from 2024-2026") +
+    
+      # 3. Scaling
+      scale_fill_viridis_d() + # the "d" stands for discrete colour scale
+
+      # 4. Geoms
+      ### 4.1.2 Note how we no longer need to scale our y-axis?
+      geom_density(alpha = 0.5) + # Plot the density estimates
+
+      # 6. Facets
+      ### 4.1.3 Add a simple facet grid, with each virus group existing in its own row 
+      # and two columns of season data
+      facet_grid(rows=...,
+                 cols=...,
+                 scales="free")
+
+
+```
+
+------------------------------------------------------------------------
+
+We can now see that the distributions of each specific virus takes a similar shape each year although we must note that we have different x-axis scales for 2024-25 vs 2025-26. If we wanted to compare these seasons more directly, how would you alter the components of this visualization?
+
+While the above visualization is pretty clean, it takes up a lot of extra space. Perhaps there is a better way to generate this kind of visualization?
+
+## 4.2.0 Plot multiple distributions with a ridgeline plot
+
+Ridgeline plots (sometimes called Joyplots) can generate a compact way to show multiple distributions of numeric values across several groups. The distributions can be shown as either histograms or density plots with all of them aligned to the same horizontal axis. The vertical axis is compressed slightly to generate an overlap between categories.
+
+To generate these visualizations we can use the `ggridges` package which is an extension of `ggplot2`. In this case, that means it uses the same grammar and can be added as a layer call to `geom_density_ridges()`. A parameter to keep in mind:
+
+-   `scale`: sets the vertical distance between ridgelines
+
+    -   1: the tallest density curve just touches the baseline of the next vertical category
+
+    -   Above 1: increasing overlap
+
+    -   Below 1: increasing separation
+
+Let's begin by replicating our faceted plot from above which compares the *2024-25 vs 2025-26* respiratory surveillance distributions across viruses.
+
+```{r, fig.width=20, fig.height=10}
+# 4.2.0 Generate our ridgeline plot to compress our KDEs
+
+respFinalPop.df %>% 
+  # Filter for 2024-2026 data
+  filter(season %in% c("2024-2025", "2025-2026"),
+         # Filter out Canada-wide data
+         reportingLaboratory != "Canada") %>%
+  
+  # 1. Data
+  ggplot() + 
+  
+      # 2. Aesthetics
+      aes(x = percentPositive, y = virus, fill = virus) +
+  
+      theme_bw() + # make the theme more plain
+      theme(text = element_text(size = 20)) + # set text size
+      theme(panel.grid.major.y = element_line(color="grey60")) + # darken our major y grid
+      theme(legend.position = "none") + # drop the legend since it's redundant
+    
+      guides(fill = guide_legend(title="Virus")) +
+      xlab("Positivity") + # Set the x-axis label
+      ylab("Density") + # Set the y-axis label
+      ggtitle("Weekly positivity distribution of viruses across seasons from 2024-2026") +
+    
+      # 3. Scaling
+      scale_fill_viridis_d() + # the "d" stands for discrete colour scale
+
+      # 4. Geoms
+      ### 4.2.0 Note how we no longer need to scale our y-axis? Instead we can scale for overlap
+      ...(scale = ..., 
+                          alpha = ...) + 
+  
+      # 6. Facets
+      # Add a simple facet wrap, with each season existing in its own column
+      facet_grid(~season,
+                 scales="free_x")
+```
+
+------------------------------------------------------------------------
+
+## 4.3.0 Use `geom_density_ridges_gradient()` to fill densities on a gradient
+
+From above you can now see that we've somewhat compacted all that dimensional data into a single plot that still clearly conveys the difference in overall positivity distribution between viruses. The distributions across our viruses suggest that a few more such as RSV, HPIV, HMPIV, and HCoV all have longer tails in the 2024-25 data vs what is seen in the current 2025-26 season. This could be the difference between a complete and incomplete dataset or there may be other factors involved in these differences!
+
+For our audience, we would need to clean up our axis titles to clarify that these proportions are calculated independently. An additional option with your ridgeline plots is the fill variant. Right now we are using a `scale_fill_gradient_d()` to generate **discrete** colour fill for each of our density plots. To accomplish a nicer horizontal gradient we will change the layer call to `scale_fill_viridis_c()` since our x-axis is **continuous**. Keep in mind that we also cannot set the `alpha` transparency on our density plots when filling with a gradient. We also have to set our aesthetics `fill` to `stat(x)` to accomplish this feat as well.
+
+```{r, fig.width=20, fig.height=10}
+# 4.3.0 Generate our ridgeline plot with a horizontal gradient
+
+respFinalPop.df %>% 
+  # Filter for 2024-2026 data
+  filter(season %in% c("2024-2025", "2025-2026"),
+         # Filter out Canada-wide data
+         reportingLaboratory != "Canada") %>%
+  
+  # 1. Data
+  ggplot() + 
+  
+      # 2. Aesthetics
+      aes(x = percentPositive, y = virus, fill = after_stat(x)) +
+  
+      theme_bw() + # make the theme more plain
+      theme(text = element_text(size = 20)) + # set text size
+      theme(panel.grid.major.y = element_line(color="grey60")) + # darken our major y grid
+      theme(legend.position = "none") + # drop the legend since it's redundant
+    
+      guides(fill = guide_legend(title="Virus")) +
+      xlab("Positivity") + # Set the x-axis label
+      ylab("Density") + # Set the y-axis label
+      ggtitle("Weekly positivity distribution of viruses across seasons from 2024-2026") +
+    
+      # 3. Scaling
+      ### 4.3.0 Use the Magma option 
+      ...(name="Positivity", option = "C", direction = ...) + 
+
+      # 4. Geoms
+      ### 4.3.0 Switch our geom to the gradient version
+      ... + # Plot the density estimates
+  
+      # 6. Facets
+      # Add a simple facet wrap, with each season existing in its own column
+      facet_grid(~season,
+                 scales="free_x")
+```
+
+By altering how we fill our density estimates, we emphasize the x-axis range. "Hotter" colours for lower positivity and "cooler" colours for upper positivity ranges. What this really highlights for us is the length and range of our distribution tails.
+
+Of course there are other ways that you could compare these two sets of distributions as density plots. How would you approach overlapping positivity distributions for different years atop each other?
+
+------------------------------------------------------------------------
+
+# 5.0.0 Categorical distribution plots
+
+Did you know the boxplot is nearly 50 years old! First invented in the 1970s by our favourite statistician, John Wilder Tukey, we'll dig into how and when to use this iconic plot. While we're here we'll also take a look at other categorical distribution plots. While our KDE and ridgeline plots provide quite a bit of detail, they can also be a little more limited in their space efficiency. The following categorical distribution plots will perhaps provide some more information efficiency.
+
+## 5.1.0 Summarize population distributions with `geom_boxplot()`
+
+As you can see from the previous section, we comfortably fit a quite few distributions on a ridgeline plot. From the looks of it, SARS-CoV-2 had a higher midpoint positivity in its distribution.
+
+Can we visualize the data in a more summarized form? Let's explore the box plot.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/boxplot_dissection.png?raw=true" width="800"/>
+
+The dissection of a boxplot's components shows us how it summarizes data distribution.
+:::
+
+Also known as the box and whisker plot, this visualization conveys the distribution of samples within a group or population and is built upon 5 principal values:
+
+-   "Box"
+
+    -   **median**: dark line across centre of box
+
+    -   **lower quartile**: lower-bound of box (aka lower hinge)
+
+    -   **upper quartile**: upper-bound of box (aka upper hinge)
+
+-   "Whiskers"
+
+    -   **lower extreme**: length of lower whisker
+    -   **upper extreme**: length of upper whisker
+
+Together, the lower and upper quartiles produce the interquartile range (IQR). The general implementation of boxplots classify any observations 1.5 IQR above the upper quartile or below the lower quartile as **outliers** of the distribution. The characteristics of outliers can be set as parameters within the `geom_boxplot()` layer. Parameters include `outlier.shape`, `outlier.size`, and `outlier.colour`.
+
+Unlike a histogram, the **minimum** number of values to generate a boxplot is **5**. While you could generate a boxplot on fewer numbers, you might not have actual whiskers! This is definitely a great alternative when sample sizes are between 5-30 for each population.
+
+*Historically* this was a simple way to visualize summary statistics of populations while being easy to produce by hand. Of course, with the age of computing, the production of kernel density estimates have allowed for more diverse visualizations. This plot, however, remains a popular format and thus is more readily understood by general audiences.
+
+Each compact box can take up the same space as a barplot column but it gives much more information about the population. Let's look at a single aspect - `percentPositive` in the year of 2024-25 across our usual viruses.
+
+Note here that we'll also be making use of the `ylim()` layer which can change the y-axis limits. For this, you simply need to supply the lower and upper limits as values. Note that the order of your values does matter! You can achieve similar control with the x-axis and the `xlim()` layer.
+
+```{r, fig.width=20, fig.height=10}
+# 5.1.0 Generate a basic boxplot of positivity across multiple viruses
+
+respFinalPop.df %>% 
+  # Filter for 2024-2025 data
+  filter(season %in% c("2024-2025"),
+         # Filter out Canada-wide data
+         reportingLaboratory != "Canada") %>%
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x=virus, y = percentPositive) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 3. Scaling
+    # Set the y-axis limit to 80 in the upper range
+    ylim(0, 80) +
+
+    # 4. Geoms
+    ### 5.1.0 Add the boxplot geom
+    ...
+```
+
+------------------------------------------------------------------------
+
+## 5.2.0 Upgrade your boxplot with some confidence intervals and values
+
+From the looks of it, we can confirm what we saw before in our density plot - that most of the viruses have a pretty tight distribution with longer tails trailing to the higher values. Unsurprisingly, influenza again shows a different pattern with a much longer boxplot with a very compact lower half and a very wide upper quartile.
+
+A boxplot can also be updated with a few extra items to help us visualize the data:
+
+-   add data points with `geom_jitter()` and remove outliers from the boxplot to avoid double-plotting points.
+
+-   mark a \~95% confidence interval within the shape of each box plot with the `notch` parameter.
+
+-   you can set a variable width for each boxplot that is based on the number of samples used to generate the plot. The wider the box, the more samples were used to generate it.
+
+One thing you have to consider, however, is that when you have too many data points, plotting them can be very dense. Too many points and you can't really discern any additional information outside of the original boxplot!
+
+For our next example, we'll repeat our boxplot but add in these bells and whistles as mentioned above. At the same time, we'll colour our datapoints by province to see if we can draw any additional information from the plot.
+
+```{r, fig.width=20, fig.height=10}
+
+# 5.2.0 Generate a boxplot 
+
+respFinalPop.df %>% 
+  # Filter for 2024-2025 data
+  filter(season %in% c("2024-2025"),
+         # Filter out Canada-wide data
+         reportingLaboratory != "Canada") %>%
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x=virus, y = percentPositive) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 3. Scaling
+    # ylim(0, 80) +
+
+    # 4. Geoms
+    geom_boxplot(outlier.shape=...,  ### 5.2.0 Remove outliers 
+                 notch = ...) +    ### 5.2.0 Add a confidence interval notch
+  
+    ### 5.2.0 Add datapoints
+    ...(aes(colour = ...), alpha = 0.5, size = 2)
+```
+
+------------------------------------------------------------------------
+
+Well looking at our resulting plot the most striking thing to see is that the high EV/RV positivity value are attributed mostly to PEI, Northwest Territories (or Nova Scotia?), and New Brunswick. *How would you go about confirming this finding?*
+
+We also see that the higher values in ADV, HCoV, HMPV and HPIV also appear to by attributed mostly to PEI!
+
+## 5.3.0 `geom_beeswarm` takes plotting your points up to the next level
+
+As you can see from above the `geom_jitter()` layer does add points to our boxplot by plotting the points such that they avoid overlapping as much as possible. Points are restricted to the width of the boxplot although this can also be adjusted to some degree with the right parameters. `geom_jitter()` is native to the `ggplot2` package with some parameters that allow for a more "random" distribution of your data points within a provided area.
+
+The goal of the `ggbeeswarm` package is to generate points that will not overlap but they *can* also be used to simultaneously simulate the kernel density of your data. There are two geoms supplied that work with the `ggplot2` package to accomplish this. The first is `geom_beeswarm()`, which has a number of parameters that can be used to set their `aes()` mappings but also how the points are laid out:
+
+-   `priority`: determines the method used to perform the point layout.
+
+    -   options include: ascending, descending, density, random, and none.
+
+-   `groupOnX`: if TRUE then jitter is added to the x axis (default behaviour) otherwise jitter along the y axis.
+
+-   `dodge.width`: the amount by which different aesthetics groups (must be a factor) will be dodged.
+
+-   `show.legend`: determines of the this layer should be included in the legends.
+
+    -   options include: `NA` (yes if aesthetics are mapped), `FALSE` (never include), and `TRUE` (always include)
+
+-   `cex`: an optional parameter that can be used to help set the spacing between values.
+
+You may also sometimes get warnings for a boxplot that the notches went outside the hinges. This means your notches and confidence intervals extend beyond one of the upper or lower quartiles. This problem is likely due to a wide distribution with only a few data points and can result in a strange looking box. Let's turn it back off for now.
+
+Let's zoom in on the EV/RV finding and examine the distribution of data for individual provinces with a geom_beeswarm.
+
+```{r, fig.width=20, fig.height=10}
+
+# 5.3.0 Generate a boxplot of EV/RV positivity across provinces with geom_beeswarm
+
+respFinalPop.df %>% 
+  # Filter for 2024-2025 data
+  filter(season %in% c("2024-2025"),
+         # Filter out Canada-wide data
+         reportingLaboratory != "Canada",
+         # Filter for EV/RV
+         virus %in% c("EV/RV")
+         ) %>%
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x=reportingLaboratory, y = percentPositive) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 3. Scaling
+    # ylim(0, 80) +
+
+    # 4. Geoms
+    geom_boxplot(outlier.shape=NA,  # Remove outliers 
+                 notch = FALSE) +   ### 5.3.0 Remove the confidence interval notch
+  
+    ### 5.3.0 Add datapoints as a beeswarm
+    ...
+```
+
+------------------------------------------------------------------------
+
+### 5.3.1 `geom_quasirandom()` adds KDE structure to your plotting
+
+As we can see from above, the `geom_beeswarm()` layer adds a little more structure to the data in a somewhat rigid way. Any datapoints that are near each other are deliberately spaced out to almost represent the distribution of your data. Of course, you may run into some issues as your number of datapoints increases or as your data range increases. We see this problem very clearly in our previous plot.
+
+To remedy this, we can balance the visualization a bit with the `geom_quasirandom()` function. `geom_quasirandom()` works similarly to the `geom_beeswarm()` function with emphasis on an additional method of how the points are plotted:
+
+-   `method`: determine the method for distributing the points. Options include:
+    -   quasirandom, pseudorandom: generates a KDE before plotting points in a violin shape
+    -   smiley, frowney: generates a KDE, then points are binned with maximum bin values plotted on the outside or inside respectively
+    -   tukey: plotted more as dotstrips in a box-plot style.
+-   `varwidth`: if TRUE, vary the width of each group based on the number of samples in the group
+
+```{r, fig.width=20, fig.height=10}
+
+# 5.3.1 Generate a boxplot of EV/RV positivity across provinces with geom_quasirandom
+
+respFinalPop.df %>% 
+  # Filter for 2024-2025 data
+  filter(season %in% c("2024-2025"),
+         # Filter out Canada-wide data
+         reportingLaboratory != "Canada",
+         # Filter for EV/RV
+         virus %in% c("EV/RV")
+         ) %>%
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x=reportingLaboratory, y = percentPositive) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 3. Scaling
+    # ylim(0, 80) +
+
+    # 4. Geoms
+    geom_boxplot(outlier.shape=NA,  # Remove outliers 
+                 notch = FALSE) +   ### 5.3.0 Remove the confidence interval notch
+  
+    ### 5.3.1 Add datapoints as a quasirandom beeswarm
+    ...
+```
+
+------------------------------------------------------------------------
+
+Now our data points take a more nuanced approach with a uniform width that shapes the data as a distribution. We'll see this with even more emphasis in a few sections.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/beeswarm_joy.png?raw=true" width="700"/>
+
+When given the need to show data distribution, try the quasirandom plotting of points over a simple beeswarm.
+:::
+
+------------------------------------------------------------------------
+
+## 5.4.0 Add a third dimension to your boxplot with nested boxplots
+
+Is there more to the data we've visualized? For our dataset, a logical question to ask next would be how do these values compare across different seasons. We've done the same previously with our KDE plots so let's try it with boxplots.
+
+The kind of boxplot we will create are known as nested boxplots. Technically speaking, up to this point, our multi-boxplot visualizations have been "grouped" boxplots because we are exploring a single variable (**percentPositivity**), across multiple groups within another variable (**reportingLaboratory**). Now we will further nest within the \`reportingLaboratory\`\` variable to look at a secondary variable (**season**) to break each province (reporting lab) into subgroups. We could do this with 2 or more seasons but we'll use just 2 for now.
+
+For our nested boxplot we'll use the `fill` parameter to generate different subgroups in our boxplot to make a nested boxplot. In doing so, we'll also have to add the use of the `geom_quasirandom()` parameters:
+
+-   `dodge.width`: separate the data points by any aesthetic groups that have been assigned.
+
+-   `width`: set the maximum spread of your data points within each grouping
+
+-   `alpha`: set the opacity of your data points so you can see more of the overlapping data.
+
+Remember how we said to avoid plotting all points when you have too many? In this case, we can plot all of our points in a cleaner way than `geom_jitter()` by using a `geom_quasirandom()` to confine all our datapoints to a smaller area.
+
+```{r, fig.width=20, fig.height=10}
+# 5.4.0 Generate a nested boxplot
+
+respFinalPop.df %>% 
+  # Filter for 2024-2026 data
+  filter(season %in% c("2024-2025", "2025-2026"),
+         # Filter out Canada-wide data
+         reportingLaboratory != "Canada",
+         # Filter for EV/RV
+         virus %in% c("EV/RV")
+         ) %>%
+
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x=reportingLaboratory, 
+        y = percentPositive,
+        fill = ...                 ### 5.4.0 Set the fill colour based on season!
+        ) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+
+    # 4. Geoms
+    geom_boxplot(outlier.shape=NA,  
+                 notch = FALSE) +   
+  
+    ### 5.4.0 Add datapoints as a quasirandom beeswarm
+    geom_quasirandom(dodge.width = 0.7,     # How far apart to set our groups
+                     width = 0.15,          # How wide to make each beeswarm
+                     alpha = 0.5)          # Set the opacity very low since we expect a lot of points!
+```
+
+In our boxplots, we are plotting the data in both a boxplot and dotplot format. The shape of the dots helped to give a better sense of salary distribution within each subgroup. You can see that the data points overlay on the box but also fall outside. Can we get the compact nature of the boxplot while still getting the visual appeal generated by a density plot?
+
+------------------------------------------------------------------------
+
+## 5.5.0 Violin plot - the lovechild of density and boxplots
+
+As the title says, the violin plot is a mixture of both the boxplot and kernel density plot. It's a miniaturized KDE that is mirrored across its axis. It encompasses the summary information of the boxplot but in a pear or violin-shaped distribution. To generate a `geom_violin()` in `ggplot`, a minimum of three values are required. To justify using a violin, I would again suggest sticking to a similar rule of thumb of a minimum \~30 samples/observations to ensure an accurate representation of the distribution.
+
+The nuanced visualization of a violin plot gives much more information than the boxplot itself and most boxplots can be replaced with a violin plot. Despite the gateway to more detailed distribution information, this format remains less popular/familiar to scientists. Therefore its immediate accessibility to your audience can be limited.
+
+An important parameter of this geom is `scale`: this sets how big each violin is in comparison to each other. It accepts the following values:
+
+-   `area`: default value so all violins will have the same area.
+
+-   `count`: scale areas proportionately to observations.
+
+-   `width`: all violins have the same maximum width. Total area is not the same for each.
+
+::: {.alert .alert-block .alert-warning}
+**Outliers and violins:** Much like a KDE, the theoretical distribution of a violin plot can generate some impossible values - especially at the tails. Remember that this is a theoretical distribution based on the data supplied. Depending on how much variation is in your data, and how many outliers it has, it can really affect the shape of your violin.
+:::
+
+```{r, fig.width=20, fig.height=10}
+# 5.5.0 Generate a violin plot
+
+respFinalPop.df %>% 
+  # Filter for 2024-2026 data
+  filter(season %in% c("2024-2025", "2025-2026"),
+         # Filter out Canada-wide data
+         reportingLaboratory != "Canada",
+         # Filter for EV/RV
+         virus %in% c("EV/RV")
+         ) %>%
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x=reportingLaboratory, 
+        y = percentPositive,
+        fill = factor(season)                 ### 5.4.0 Set the fill colour based on season!
+        ) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 3. Scaling
+    # ylim(0, 80) +
+
+    # 4. Geoms
+    ### 5.5.0 Add the violin geom
+    ... + 
+  
+    ### Add datapoints as a quasirandom beeswarm
+    geom_quasirandom(dodge.width = 0.85,     # How far apart to set our groups
+                     width = 0.15,          # How wide to make each beeswarm
+                     alpha = 0.5)          # Set the opacity very low since we expect a lot of points!
+```
+
+Looking at our violin plot we can see just how closely the `geom_quasirandom()` points match our violin shape. Depending on the density of your observations, you could easily drop the data points to make things a little cleaner.
+
+------------------------------------------------------------------------
+
+## 5.6.0 Violin plots represent distributions and boxplots summarize them
+
+The major advantage to the violin plot is that, by it's nature, it is very sensitive to the distribution that produces the density estimate. The boxplot represents the summary information of a distribution but is *always* a visual representation of a *normal* distribution. There are not enough parameters supplied to represent anything more complex!
+
+The violin plot is not limited in that respect. Despite some of it's visual caveats, it can certainly detect ***multi-modal*** data. Let's make a toy example to illustrate using some data that we'll artificially put together.
+
+```{r, fig.width=18, fig.height=8}
+# 5.6.0 Generate a combined violin and boxplot of bimodal data
+
+respFinalPop.df %>% 
+  # Filter for 2024-2025 data
+  filter(season %in% c("2024-2025"),
+         # Filter for Ontario and Alberta only
+         reportingLaboratory %in% c("Ontario", "Alberta"),
+         # Filter for EV/RV
+         virus %in% c("EV/RV", "ADV")
+         ) %>%
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x=percentPositive, 
+        y = reportingLaboratory
+        ) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 3. Scaling
+    # ylim(0, 80) +
+
+    # 4. Geoms
+    geom_violin(scale = "width", colour="darkviolet") + 
+    geom_boxplot(alpha = 0.6, colour = "blue") + 
+    geom_quasirandom(alpha = 0.6, aes(colour = virus))
+```
+
+In our toy model, we can see that there really are 2 distinct populations. The datapoints and violins both mirror this. However, looking closely at the boxplot, we only see a long distribution of the data. The biggest tell is the imbalanced upper and lower quartiles of the boxes. Without plotting the datapoints, you would not know if the data is spread evenly over the boxplot's area (remember it contains the middle 50% of the data) or if it is hiding a bimodal distribution.
+
+**Take-home message:** while boxplots are great and easy to interpret on the surface, always ask to see the datapoints or a violin instead!
+
+------------------------------------------------------------------------
+
+## 5.7.0 Combine violin and boxplots into the ultimate plot
+
+From our above example, you can see that we blended a number of `geoms` together. With a little working around, we can also plot both violins and boxplots together in a multivariate setting! This gives us the familiarity of the boxplot but also clearly displays the theoretical distribution. Some steps to accomplish this:
+
+1.  To put emphasis on the violin plots we set the `scale` parameter to "width".
+2.  We need to adjust some of the boxplot parameters to fit them within the violin plots
+3.  Some adjustments to the `aes()` parameters for our geoms directly to ensure our points are plotted correctly.
+4.  Drop the `geom_quasirandom()` layer since our violins mirror the same shape so well.
+
+```{r, fig.width=20, fig.height=10}
+# 5.7.0 Generate a combination violin plot with boxplot
+
+respFinalPop.df %>% 
+  # Filter for 2024-2026 data
+  filter(season %in% c("2024-2025", "2025-2026"),
+         # Filter out Canada-wide data
+         reportingLaboratory != "Canada",
+         # Filter for EV/RV
+         virus %in% c("EV/RV")
+         ) %>%
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x=reportingLaboratory, 
+        y = percentPositive) +
+
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+
+    # 3. Scaling
+    scale_colour_manual(values=c("black", "black")) + # we'll need this to fix our boxplots
+  
+    # 4. Geoms
+    ### 5.7.0 Add the violin geom
+    geom_violin(scale = "width", aes(...)) + 
+  
+    ### 5.7.0 Boxplot but smaller width so they reside "within" the violin plot. 
+    # Do you think the order matters?
+    geom_boxplot(aes(...), width=0.2, 
+                 position = position_dodge(width=0.9), 
+                 outlier.shape=NA) # Remove the outliers
+```
+
+::: {.alert .alert-block .alert-danger}
+**Section 5.7.0 Comprehension Question:** Looking at the above code for our graph, why do you think we set the **aes(fill/colour = factor(season))** aesthetic individually for some layers rather than directly in the top **aes()** layer?
+:::
+
+------------------------------------------------------------------------
+
+## 5.8.0 Parallel coordinate plots can help visualize multivariate date
+
+While the above visualization shows with some clarity the total distribution EV/RV positivity across provinces, the messiness of outliers has invaded into some of the violin plots themselves. An experienced eye, however can still see that the bulk of the population centres around our internal boxplots offset by the stretched out look of our violins. We could, of course clean it up by removing some of the outliers ahead of time but I generally keep outliers as a visual reminder that experiments aren't perfect!
+
+Suppose, however, we wanted to add more viruses to our data across a larger timespan like multiple seasons? With so many potential datapoints in each province, things would start to get very crowded. To accommodate all of that data, you could facet it into multiple groups based on the virus, for instance, but this would separate the datasets from each other. Sometimes things look sharper when you can see it all on a single plot.
+
+Organizing multiple groups, across multiple categories is the domain of the parallel coordinate plot. To accomplish this feat we'll need to do a couple of key things:
+
+1.  We'll need to group and summarize our data after filtering. We'll gather the mean positivity for each virus (within a province) at each season.
+2.  Set a `group` parameter made from multiple variables. Normally, the `group` parameter can only be set to a single variable (column) in your data. We can, however, make a new variable "on the fly" using the `interaction()` function. We can supply *multiple* variables from our dataset to help create this new interaction group. This is an extremely helpful way to subgroup your data much like using a `group_by()` call within the `gpplot()` function.
+
+```{r, fig.width=20, fig.height=10}
+
+# 5.8.0 Generate a parallel coordinate plot
+
+respFinalPop.df %>% 
+  # Filter out Canada-wide data
+  filter(reportingLaboratory != "Canada",
+         season %in% c("2024-2025"),
+         # Filter for 3 specific viruses
+         virus %in% c("EV/RV", "SARS-CoV-2", "Influenza")
+         ) %>% 
+  
+  # Reset the factors for month to follow the season start and end
+  mutate(month = factor(month, levels = c("Sep", "Oct", "Nov", "Dec", "Jan", 
+                        "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"))) %>% 
+  # Group the data
+  group_by(month, virus, reportingLaboratory) %>% 
+
+  # Summarise to get mean positivity for each group
+  summarize(meanPositivity = mean(percentPositive)) %>% 
+  
+  # Revert back to a regular data frame
+  ungroup() %>% 
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x=month, y = meanPositivity, colour = virus) +
+    
+    # Set some configurations for the plot
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 3. Scaling
+    # ylim(100000, 200000) +
+
+    # 4. Geoms
+    ### 5.8.0 A line plot to join the points
+    geom_line(aes(group = ...)) +    # Set the group aesthetic by a dual-variable set
+
+    ### 5.8.0 Add the points in also to help follow the connections
+    geom_point()
+```
+
+What our plot does here is connect each month across time, showing the mean positivity for each province which can give us a sense of trend for a single province, but lines are coloured based on `virus` so that we can also see trends between our 3 viral groups. For instance, in 2024-25, the influenza positivity peaked some time between February and March. We could just as easily use the same kind of plot to look at influenza across multiple seasons to ask if it shared a similar trend.
+
+------------------------------------------------------------------------
+
+## 5.9.0 Explore the trends within groups after exploring data across groups
+
+From our above data we see an interesting datapoint from 2021 where one of the University mean salaries really jumps for just the year. A quick sort through the summarized data shows this comes from the University of Sudbury. Let's go back to our boxplots and look at the salaries for all individuals across a period for just the single university. We'll combine it with a parallel coordinate plot too so we can get a better sense of what is happening.
+
+```{r, fig.width=20, fig.height=10}
+
+# 5.9.0 Generate a boxplot with a parallel coordinate plot
+
+respFinalPop.df %>% 
+  filter(reportingLaboratory != "Canada",
+         season %in% c("2024-2025"),
+         # Filter for just influenza
+         virus %in% c("Influenza")
+         ) %>% 
+  
+  # Reset the factors for month to follow the season start and end
+  mutate(month = factor(month, levels = c("Sep", "Oct", "Nov", "Dec", "Jan", 
+                        "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"))) %>% 
+  
+  group_by(month, reportingLaboratory) %>% 
+  
+  # Summarise to get mean positivity for each group
+  summarize(meanPositivity = mean(percentPositive)) %>% 
+  
+  # Revert back to a regular data frame
+  ungroup() %>% 
+  
+  # 1. Data
+  ggplot(.) +
+    # 2. Aesthetics
+    aes(x=month, y = meanPositivity) +
+    
+    # Set some configurations for the plot
+    theme(text = element_text(size = 20)) + # set text size
+    theme(axis.text.x = element_text(angle=90, hjust = 1, vjust=0.5)) + # Adjust our x-axis text
+  
+    # 4. Geoms
+    geom_boxplot(outlier.shape = NA) +
+  
+    ### 5.9.0 Add datapoints like a strip plot
+    geom_point(aes(colour = ...)) +
+  
+    ### 5.9.0 Use a line plot and link our points by numericID
+    geom_line(aes(group = ...,    
+                  colour = ...), linewidth = 1)
+```
+
+Surprisingly, it looks like Ontario and Alberta have some of the lowest peaks for 2024-2025. Newfoundland appears to peak slightly later while Yukon appears to have the highest rate, peaking in February with a small resurgence in May/June.
+
+------------------------------------------------------------------------
+
+# 6.0.0 Class summary
+
+We've covered a number of key plots today, including when and how to use them. Next week we'll revisit some of these plots and spruce them up with extra touches that will take them that extra distance. Below you'll find a summary of what we've discussed today.
+
+## 6.1.0 Summary of plots
+
+| Plot | Key Features | Notes |
+|:---|:---|:---|
+| Scatterplot | Good for exploring relationships between variables | Bubbleplots add an extra dimension to your data |
+| Barplot | Present values across groups. | Presenting proportions, small sample sizes |
+|  | Stack categories for extra dimension | Does not dissect individual distributions |
+| Nightingale plot | Circular-wedge barplot, same properties as barplot | Presenting data over unordered groups |
+|  |  | Visual emphasis on outer area size may mislead reader |
+| Racetrack plot | Circular-ringed barplot, same properties as barplot | Looking for a more compact way to show barplots |
+|  |  | Calculate length by radians as outer rings are "stretched" |
+| Density plot | Theoretical distribution of your sample data | Minimum sample size 4 but 30 is more reliable |
+|  |  | Can plot up to 5 distributions on same axis |
+|  |  | Tails can produce "ghost" data |
+| Ridgeplots | Allows tighter visualizations of multiple densities | Good way to pack more KDEs into a smaller area |
+|  | Same properties as KDEs | No real control of outliers |
+|  |  | Similar "ghost" data issues |
+| Box and whisker plot | Summarize distributions with 5 parameters | Popular and compact presentation of simple populations |
+|  |  | Minimum sample size = 5 |
+|  |  | Does not properly visualize multi-modal data |
+| Violin plots | Boxplot format with KDE violin shape | Compact representation of distribution shape |
+|  |  | Less popular with nuanced interpretation |
+|  |  | Inherits "ghost" data and other properties of KDE |
+|  |  | DOES interpret multi-modal populations |
+| Parallel coordinate plot | Visual representation of multivariate data | Connects trends across groups |
+|  | Related data can be connected linearly | Not limited by number of samples |
+|  |  | Can help identify trends within multicategorical data |
+
+------------------------------------------------------------------------
+
+## 6.2.0 Weekly assignment
+
+This week's assignment will be found under the current lecture folder under the "assignment" subfolder. It will include an R markdown notebook that you will use to produce the code and answers for this week's assignment. Please provide answers in markdown or code cells that immediately follow each question section.
+
+|   | Assignment breakdown |   |
+|:--:|:--:|:---|
+| Code | 50% | \- Does it follow best practices? |
+|  |  | \- Does it make good use of available packages? |
+|  |  | \- Was data prepared properly |
+| Answers and Output | 50% | \- Is output based on the correct dataset? |
+|  |  | \- Are groupings appropriate |
+|  |  | \- Are correct titles/axes/legends correct? |
+|  |  | \- Is interpretation of the graphs correct? |
+
+Since coding styles and solutions can differ, students are encouraged to use best practices. Assignments *may* be rewarded for well-coded or elegant solutions.
+
+You can save and download the markdown notebook in its native format. Submit this file to the the appropriate assignment section by 12:59 pm on the date of our next class: March 27th, 2025.
+
+------------------------------------------------------------------------
+
+## 6.3.0 Acknowledgements
+
+**Revision 1.0.0**: created and prepared for **CSB1021H S LEC0141**, 03-2021 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+**Revision 1.0.1**: edited and prepared for **CSB1020H S LEC0141**, 03-2022 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+**Revision 1.0.2**: edited and prepared for **CSB1020H S LEC0141**, 03-2023 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+**Revision 2.0.0**: Revised and prepared for **CSB1020H S LEC0141**, 03-2024 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+**Revision 3.0.0**: Revised and prepared for **CSB1020H S LEC0141**, 03-2025 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+**Revision 4.0.0**: Revised and prepared for **CSB1020H S LEC0141**, 03-2026 by Calvin Mok, Ph.D. *Bioinformatician, Education and Outreach, CAGEF.*
+
+------------------------------------------------------------------------
+
+## 6.4.0 References
+
+1.  Public Ontario Salary Data: <https://www.ontario.ca/page/public-sector-salary-disclosure>
+
+2.  Anscombe's Quartet: <https://en.wikipedia.org/wiki/Anscombe%27s_quartet>
+
+3.  Choosing the right chart type: <https://extremepresentation.typepad.com/blog/2006/09/choosing_a_good.html>
+
+4.  A layered grammar of graphics by Hadley Wickham: <http://vita.had.co.nz/papers/layered-grammar.html>
+
+5.  `read_delim()` column types and information: <https://readr.tidyverse.org/reference/read_delim.html>
+
+6.  Pie chart rules: <https://www.1ka.si/d/en/help/faq/what-is-the-maximum-number-of-categories-to-display-using-pie-charts>
+
+7.  Kernel density estimation: <https://stats.stackexchange.com/questions/76948/what-is-the-minimum-number-of-data-points-required-for-kernel-density-estimation>
+
+8.  Ridgeline plots: <https://www.data-to-viz.com/graph/ridgeline.html>
+
+9.  Visualizing samples with boxplots: <https://www.nature.com/articles/nmeth.2813.pdf?origin=ppub#>:\~:text=Whereas%20histograms%20require%20a%20sample,render%20it%20even%20more%20informative.
+
+10. Reasons to use a violin plot: <https://blog.bioturing.com/2018/05/16/5-reasons-you-should-use-a-violin-graph/>
+
+11. Parallel coordinate plot parameters: <https://www.rdocumentation.org/packages/GGally/versions/1.5.0/topics/ggparcoord>
+
+12. Lots of more plots in R!: <https://www.r-graph-gallery.com/index.html>
+
+------------------------------------------------------------------------
+
+## The Center for the Analysis of Genome Evolution and Function (CAGEF)
+
+The Centre for the Analysis of Genome Evolution and Function (CAGEF) at the University of Toronto offers comprehensive experimental design, research, and analysis services in microbiome and metagenomic studies, genomics, proteomics, and bioinformatics.
+
+From targeted DNA amplicon sequencing to transcriptomes, whole genomes, and metagenomes, from protein identification to post-translational modification, CAGEF has the tools and knowledge to support your research. Our state-of-the-art facility and experienced research staff provide a broad range of services, including both standard analyses and techniques developed by our team. In particular, we have special expertise in microbial, plant, and environmental systems.
+
+For more information about us and the services we offer, please visit <https://www.cagef.utoronto.ca/>.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/CAGEF_new.png?raw=true" width="700"/>
+:::
