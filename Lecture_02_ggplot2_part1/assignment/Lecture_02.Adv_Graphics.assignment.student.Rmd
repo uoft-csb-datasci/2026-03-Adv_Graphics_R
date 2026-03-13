@@ -1,0 +1,798 @@
+---
+title: 'Advanced Visualizations Assignment 02'
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r, echo=FALSE}
+# This allows the file to be LIVE and run without errors stopping it.
+knitr::opts_chunk$set(error = TRUE)
+```
+
+::: {align="center"}
+![](https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/CAGEF_services_slide.png?raw=true){width="700"}
+:::
+
+# Advanced Graphics and Data Visualization in R
+
+# Assignment 02: Barplots, ridgelines, and boxplots! Oh my!
+
+## 0.1.0 An overview of Advanced Graphics and Data Visualization in R
+
+**"Advanced Graphics and Data Visualization in R"** is brought to you by the Centre for the Analysis of Genome Evolution & Function's (CAGEF) bioinformatics training initiative. CSB1021 was developed to enhance the skills of students with basic backgrounds in R by focusing on available philosophies, methods, and packages for plotting scientific data. Many of the datasets and examples used in this course will be drawn from real-world datasets and the techniques learned herein aim to be broadly applicable to multiple fields.
+
+This assignment is the second in a 6-part series. The aim for the end of this series is for students to recognize how to import, format, and display data based on their intended message and audience. The format and style of these visualizations will help to identify and convey the key message(s) from their experimental data.
+
+At the start of each lecture, assignments will be provided for use on the [University of Toronto Jupyter Hub](https://jupyter.utoronto.ca/hub/login) so students can apply and familiarize themselves with the material from the lecture.
+
+------------------------------------------------------------------------
+
+## 0.2.0 Lecture review
+
+This week's lecture focused on introducing you to some plots both old and new through the `ggplot2` package. Most importantly we focused on:
+
+1.  The grammar of graphics.
+2.  Barplots and their variants.
+3.  Distribution plots like density plots, box and whisker plots, and violin plots.
+
+------------------------------------------------------------------------
+
+## 0.3.0 A legend for text format in R markdown
+
+`grey background` - a package, function, code, command or directory. Backticks are also use for in-line code.\
+*italics* - an important term or concept or an individual file or folder\
+**bold** - heading or a term that is being defined\
+[blue text]{style="color:blue"} - named or unnamed hyperlink
+
+`...` - Within each coding cell this will indicate an area of code that students will need to complete for the code cell to run correctly.
+
+::: {.alert .alert-block .alert-info}
+**Blue box:** A key concept that is being introduced
+:::
+
+::: {.alert .alert-block .alert-warning}
+**Yellow box:** Risk or caution
+:::
+
+::: {.alert .alert-block .alert-success}
+**Green boxes:** Recommended reads and resources to learn R
+:::
+
+::: {.alert .alert-block .alert-danger}
+**Red boxes:** A comprehension question which may or may not involve a coding cell. You usually find these at the end of a section.
+:::
+
+------------------------------------------------------------------------
+
+## 0.4.0 Data used in this assignment
+
+Today's assignment datasets will focus on the some of the same data from lecture.
+
+## 0.4.1 Dataset 1: respDataLong.df
+
+This dataframe will be found in the `Assignment02.RData` file and contains and proto version of our dataset from Lecture 02. It contains four seasons worth of data but does not include the population census data we relied upon to help visualize our data in lecture 02.
+
+## 0.4.2 Dataset 2: CanadaCensusData_2022-2026.csv
+
+This is a compilation of census data from Stats Canada. These values reflect Q4 estimates of province populations for 2022-2026. It was mined from here [Stats Canada information page found here](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710000901) for the 2022-2025 census data. 2026 population values are from [projected high-growth scenarios found here](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710005701).
+
+------------------------------------------------------------------------
+
+## 0.5.0 Packages used in this assignment (2 points)
+
+`tidyverse` which has a number of packages including `dplyr`, `tidyr`, `stringr`, `forcats` and `ggplot2`
+
+`viridis` helps to create color-blind palettes for our data visualizations
+
+`ggbeeswarm`, and `ggridges` are new packages we need to install. They'll help us generate some nice graphs.
+
+```{r}
+# ---------- Install packages here (1 pt) ---------- #
+
+```
+
+```{r}
+# Load the data packages and libraries (1 pt)
+load()
+
+# ---------- Source packages here ---------- #
+
+
+```
+
+------------------------------------------------------------------------
+
+# 1.0.0 `respDataLong.df` covers 4 seasons of data
+
+Let's look at a full version of our data from last lecture. With this full dataset we can better appreciate some of the figures, visualizations and assignments we created last week but also improve upon them based on today's lecture material.
+
+We'll begin by loading the data into our session from an `.RData` file.
+
+```{r}
+# Read in respiratory surveillance data
+load(...)
+
+# Check the structure and preview the data
+str(respDataLong.df)
+head(respDataLong.df)
+
+```
+
+------------------------------------------------------------------------
+
+### 1.0.1 Explore the unique values of the dataset (1 point)
+
+Looking at the data itself, we have 33,852 observations across 8 variables:
+
+1.  Year data ranging from the 2022-2023 season through to the 2025-2026 monitoring season.
+2.  We now have a Date variable called `endingDate` which represents the ending date of the test results from each observation's week.
+3.  The bulk of our count data is held in the `tests` and `detections` variables while `percentPositive` relates to the percentage of positive (detections) in relation to the total number of tests.
+4.  Metadata or descriptive data is held in the `reportingLaboratory` and `virus` variables.
+
+Much like we did in lecture, we should quickly explore our dataset values. How many unique reporting laboratories are there? How many unique virus groups are there?
+
+Use the following code cell and the `apply()` function to generate a list of unique values for these two variables.
+
+```{r}
+# 1.0.1 Gather the unique values of reportingLaboratory and virus using apply()
+respDataLong.df %>% 
+  # 0.5 points
+  .[, ...] %>% 
+  # 0.5 points
+  apply(...)
+```
+
+------------------------------------------------------------------------
+
+### 1.1.0 Update/replace values in the `reportingLaboratory` variable (2 points)
+
+Refreshing ourselves on the reporting laboratories, we see again that there is a combination of actual laboratory sites (P.H.O.L. - Toronto, Montérégie, etc.) and provincial names. The provincial data being an amalgamation of the testings sites, to represent the total values in those provinces. Within this data, there still remains some inconsistency that will cause us trouble down the road.
+
+1.  There are many entries that end with trailing white-space! In fact there are two entries for "Québec" and "Québec "
+2.  There is also just a plain "Quebec" with no accents! This version will be treated differently and we need to collapse it with the others into a single value of "Québec".
+3.  There are two entries also for "Newfoundland" and "Newfoundland and Labrador" which should be collapsed into a singular simple version
+4.  There are multiple labels for "Influenza" in the `virus` variable. This needs to be collapsed into a singular value of "Influenza"
+
+Therefore before we're ready to move on a couple more cleanup steps will be necessary. Please complete the piping code to fix these 3 problems with the dataset.
+
+```{r}
+# 1.2.1 Fix all the problems with the reporting lab values
+
+respDataLong.df %>% 
+  # Strip off all the trailing spaces
+  # 0.5 points
+  mutate(...,
+         # Consolidate Quebec entries (0.5 points)
+         ...,
+         # Consolidate Newfoundland entries (0.5 points)
+         ...,
+         # Make sure your virus labels are consistent (0.5 points)
+         ...
+         ) %>%     
+  # Check that we've consolidated/fixed our reporting lab values
+  select(reportingLaboratory, virus) %>% 
+  as.list() %>% 
+  lapply(., FUN = unique)
+
+# Compare this to the expected result
+respDataLongFixed.df %>% 
+  select(reportingLaboratory, virus) %>% 
+  as.list() %>% 
+  lapply(., FUN = unique)
+  
+
+```
+
+------------------------------------------------------------------------
+
+### 1.2.0 Use the `lubridate` package to help with formatting `Date` data (2 points)
+
+Okay, our reporting lab data looks much cleaner now but we're not quite ready to proceed. The last step we'll take in preparing this part of our data is to add new columns "year" and "month" to the dataframe. While we have the `endingDate` variable in our dataset, we want to isolate the calendar year and month from each of those date values. We can most simply do this using the `lubridate` package which is part of the `tidyverse` package and simplifies how you can work with date formats and values.
+
+You'll find a [helpful cheatsheet at this link](https://rstudio.github.io/cheatsheets/lubridate.pdf).
+
+1.  Since we wish to extract just the year values, we can use the `year()` function to achieve this.
+2.  Use the `month()` function to extract the months from our ending dates but you'll have to determine how to make it generate 3-letter month labels in the process
+3.  Create a third variable `yearMonth` by using `floor_date()` on the `endingDate` variable by month.
+
+```{r}
+# Create a new year and month variable
+
+respDataLongFixed.df %>% 
+
+  # Create a new year variable from the endingDate
+  mutate(year = ...,
+         # Also create a month variable with a 3-letter label (1 point)
+         month = ...,
+         # (0.5 points)
+         yearMonth = ... 
+         )
+
+# Compare this to the expected version in respDataLongYM.df
+str(respDataLongYM.df)
+head(respDataLongYM.df)
+
+```
+
+------------------------------------------------------------------------
+
+### 1.3.0 Import population census metadata (1 point)
+
+Now we are almost ready to start working with our data. We have some helpful information extracted but we want to add a useful piece of metadata that could aid in interpreting the importance of our results.
+
+The file "CanadaCensusData_2022-2026.csv" contains census data for the five years spanning our dataset. For simplicity most of the values are from the 4th-quarter of each year vis the [Stats Canada statistics page](https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=1710000901). We'll import this data and try to combine it with our respiratory surveillance data.
+
+First import and inspect this dataset.
+
+```{r}
+# 1.3.0 Import the census data (1 point)
+popData <- read_csv(...)
+
+# Do a cursory examination of the data
+head (popData)
+str(popData)
+
+# Look at the unique values in Province
+popData %>% 
+  pull(Province) %>% 
+  unique()
+```
+
+------------------------------------------------------------------------
+
+### 1.3.1 Pivot `popData` to a long format dataframe (4 points)
+
+As you can see the data covers the aforementioned years of our dataset but the dataframe itself is in the wide format. Before proceeding to incorporate this information into the respiratory surveillance data please do the following:
+
+1.  Convert the data to long format such that you have 3 final columns `Province`, `year` and `population` to look similar to this:
+
+| Province <char> | year <int> | population <dbl> |
+|:----------------|:-----------|:-----------------|
+| Canada          | 2022       | 39284491         |
+| Canada          | 2023       | 40467722         |
+| Canada          | 2024       | 41494132         |
+| Canada          | 2025       | 41575585         |
+| Canada          | 2026       | 41930900         |
+| Newfoundland    | 2022       | 533194           |
+| ...             | ...        | ...              |
+
+2.  At the same time, we'll have to make some similar adjustments to the names in the `Province` variable to align it with what we see in the `respFinal.df` object.
+
+You can compare your version to the final version found in `popDataLong.df`.
+
+```{r}
+# 1.3.1 Pivot the population census data
+
+popData %>% 
+  # 1. Pivot the table to a longer format 
+  pivot_longer(...) %>% 
+
+  # Fix the Province column information
+  # (1 point for each mutate step, 2 total)
+  mutate(...)
+
+
+# Compare to the final long format dataframe provided
+head(popDataLong.df)
+
+# Quick check the values in the final long format data variable
+popDataLong.df %>% 
+  pull(Province) %>% 
+  unique()
+```
+
+------------------------------------------------------------------------
+
+## 1.4.0 Use the \*\_join() functions to combine data (2 points)
+
+So now we have our two sets of data in long format and we have to combine them but we should make note of a few things:
+
+1.  Our `respDataLongYM.df` currently has 33,860 observations.
+2.  The `reportingLaboratory` variable in our dataset has 41 unique values.
+3.  Our secondary metadata set, `popDataLong.df`, has a `Province` variable that only contains 14 unique values.
+
+Here is your friendly reminder that you can merge your data using the `tidyverse` and it's `*_join` functions. Depending on the merge you use, you can keep all your data or lose some of it in the process. Here's a handy table to remind you of some details.
+
+| join Type | Description |
+|:---|:---|
+| inner_join() | return all rows from x where there are matching values in y, and all columns from x and y. |
+| left_join() | return all rows from x, and all columns from x and y. Rows in x with no match in y will have `NA` values in the new columns. |
+| right_join() | return all rows from y, and all columns from x and y. Rows in y with no match in x will have `NA` values in the new columns. |
+| full_join() | return all rows and all columns from both x and y. Where there are no matching values between x and y, populate missing data with `NA`. |
+
+There are some other details involving duplicate keys BUT we will assume all of our tables have **unique key entries** ie no repeated combinations of our shared variables.
+
+Each `*_join()` verb requires the following parameters:
+
+-   `x`: your first (left-side table)
+
+-   `y`: your second (right-side table)
+
+-   `by`: by default all variables with a common name will be used otherwise provide a named vector to connect equivalent variables/columns between tables eg `by = c("a" = "b", "c" = "d")`. **Note that columns must be of the same type for comparison!**
+
+-   `multiple`: What happens if multiple entries in `y` match one in `x`? Set to `all` by default so each matching x/y combination will be created in the new table. Alternative values include `first` and `last` which return only the first or last match in `y` respectively.
+
+Proceed to join `respFinal.df` with `popDataLong.df` using the `year` and `reportingLabortory/Province` information between the two tables as unique identifiers for matching the data (2 points). The resulting output will essentially add a `population` variable to the `respFinal.df` dataframe.
+
+Hint: choose the correct `*_join()` function to ensure that observations with missing/incomplete population size data are eliminated.
+
+```{r}
+# 1.4.0 Merge the population data with the respiratory data
+
+respDataLongYM.df %>% 
+  # Use a join
+  _join(x = ..., 
+             y = ..., 
+             # Remember to correctly match names of identifying columns between the two dataframes
+             by = ...)
+
+# Check the resulting dataframe  
+str(respDataLongPop.df)
+```
+
+------------------------------------------------------------------------
+
+As we can see from the structure of the output, we have gone from 33,852 entries to just 16,339 entries. Does your output match with `respDataLongPop.df`?
+
+## 1.5.0 Final cleanup of the dataset (1 point)
+
+Before you proceed with generating figures, there is one last set of changes to make: reorder the columns of `respDataLongPop.df` to reflect the example shown below.
+
+| season | week | endingDate | year | month | reportingLaboratory | population | virus | tests | detections | percentPositive |
+|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| 2023-2024 | 23 | 2024-06-08 | 2024 | Jun | Newfoundland | 548402 | SARS-CoV-2 | 669 | 95 | 14.20029895 |
+| 2023-2024 | 23 | 2024-06-08 | 2024 | Jun | Newfoundland | 548402 | Influenza | 581 | 4 | 0.68846816 |
+| ... | ... | ... | ... | ... | ... | ... | ... | ... | ... | ... |
+
+```{r}
+# 1.5.0 Reorder columns (1 point)
+
+
+respDataLongPop.df %>% 
+   ...
+# Compare your output to the model result 
+head(respFinalPop.df)
+
+```
+
+------------------------------------------------------------------------
+
+# 2.0.0 A lesson in the y-axis of a barplot
+
+In this week's lecture we produced a number of scatterplots and in one, we introduced the idea of scaling the axes to a logarithmic scale. When R uses the `scale_x/y_log10()` function it transforms *each* observation in the data before generating any statistical data and arrangements before stacking values. Scales are then labelled with an inverse transformation.
+
+For instance, if you log-transform your data in `aes()` before drawing your geom, you get the same shape of data as using the call to `scale_*`. The labels, however, are just different representations of the same idea.
+
+Stacking log-transformed values, however, is not a linear process! There are a number of issues that can arise with this transformation and proportions on a stacked log scale lose all meaning. Let's illustrate this with some data from this week's lecture.
+
+## 2.1.0 Generate a vector of the top 5 provinces with the most tests in 2025-2026 (3 points)
+
+To simplify some of the data, we'll begin by making a list of the top 5 provinces in our dataset. The criteria will be by total number of tests across the season.
+
+```{r}
+# Calculate the top 5 provinces that generate the most tests, regardless of virus
+
+respFinalPop.df %>% 
+  # 1 point to filter
+  ...  
+  # 1 point to group and summarize
+  ...
+
+  # 1 point to arrange, slice, and pull
+  ...
+
+# Compare to a predetermined test if top 5 provinces by total tests
+top5Provinces
+```
+
+We'll use this set of provinces throughout the remaining figures.
+
+------------------------------------------------------------------------
+
+### 2.1.1 Create a dataframe of observations for the top 5 provinces in 2025-2026 (2 points)
+
+Now that you have calculated the top 5 provinces, use the `top5Provinces` vector to create a subset of data restricted to 2025-2026 using the 5 provinces identified. Afterwards, mutate the `reportingLaboratory` variable to reorder the factor in descending order by total number of `tests`.
+
+```{r}
+# 2.1.1 subset a data frame for analysis
+
+respFinalPop.df %>% 
+  # 1 point
+  ... %>% 
+  # 1 point
+  ...
+  
+# Compare this to the final version in respFintalTop5.df
+head(respFinalTop5.df)
+
+```
+
+------------------------------------------------------------------------
+
+## 2.2.0 Plot a simple bar graph (4 points)
+
+In class we looked at total viruses tested per reportingLaboratory as a simple bar graph. Plot the data from `sunshine_top5.df` as a bar graph that looks like the following image, taking care to look at details like axis titles!
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Assignments/A2_2.2.0_provinceTotalTestsBarplot.png?raw=true" width="700"/>
+
+Figure 2.2.0: more stacked barplots!
+:::
+
+```{r, fig.width=20, fig.height=10}
+# 2.2.0 simple bar chart of total salary vs year
+
+respFinalTop5.df %>% 
+  
+  # 1. Data
+  ggplot() +
+      # 2. Aesthetics
+      ...
+
+      theme(text = element_text(size = 20)) + # set text size
+
+      ...
+
+
+```
+
+------------------------------------------------------------------------
+
+### 2.2.1 Beware the problems with dodging (2 points)
+
+What if we decided to take the stacked plot from **section 2.2.0** and explode out each sector instead of stacking it? Using the `position = position_dodge()` argument in our geom call would generate the following figure. In this case, we have set the `alpha = 0.3` for each bar.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Assignments/A2_2.2.1_provinceTotalTestsBarplotDodge.png?raw=true" width="700"/>
+
+Figure 2.2.1: the consequences of dodging barplots.
+:::
+
+------------------------------------------------------------------------
+
+#### Question 1: Looking closely at the figure above, what do you hypothesize is happening with the plotting of the bars? What is data is being used to generate each bar in the plot? Pay close attention to how provinces are separated versus viruses within each province. (1 point)
+
+#### Answer:
+
+#### Question 2: Does the y-axis range look as you would expect based on the stacked barplot from **section 2.2.0**? Why or why not? (1 point)
+
+#### Answer:
+
+------------------------------------------------------------------------
+
+### 2.2.2 Dodging with overlapping bars (7 points)
+
+Now take a look at the figure below which has produced a dodged barplot of the number of individuals in each sector over multiple years. This value is generated by counting the number of observations per group. Here we are playing with geom parameters that allow the bars to expand into each other in a way to looks almost like a series of stacked and shifted histograms. Please replicate this plot using the appropriate geom.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Assignments/A2_2.2.2_provinceTotalTestsBarplotDodgeWeekly.png?raw=true&quot;" width="700"/>
+
+Figure 2.2.2: creating overlapping dodged barplots
+:::
+
+Hints:
+
+-   Notice how the bar heights appear to line up correctly along the y-axis?
+
+-   The opacity here is set to 0.4
+
+-   Pay close attention to your x-axis limits!
+
+```{r, fig.width=20, fig.height=10}
+# 2.2.2 Dodging your barplots
+
+respFinalPop.df %>%
+  ... %>% 
+  
+  # 1. Data
+  ggplot() +
+  ...
+```
+
+------------------------------------------------------------------------
+
+## 2.3.0 The problem with log-transforming a barplot (4 points)
+
+Notice the shape of your barplot data back in **section 2.2.0**? What happens if we log~10~ transform the same data as we prepare it for plotting. There are multiple ways to do this but in this case we will log-transform the data within the initial aesthetics `aes()` layer. Update your figure from **section 2.2.0** (3 points).
+
+**Hint**: Don't forget to update your axis labels to reflect your changes/transformations appropriately!
+
+```{r, fig.width=20, fig.height=10}
+# 1.4.0 simple bar chart of tests vs province log-transformed in aes
+
+respFinalTop5.df %>% 
+  
+  # 1. Data
+  ggplot() +
+      ...
+
+```
+
+------------------------------------------------------------------------
+
+## 2.4.0 Follow-up questions about your log-transformed barplots (5 points)
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Assignments/A2_2.3.0_provinceTotalTestsBarplotLogTransformed.png?raw=true" width="700"/>
+
+Figure 2.3.0: log transformed stacked barplots.
+:::
+
+Viewing the above figure (which you should have also generated in 2.3.0), please answer the following questions.
+
+#### Question 1: We label the y-axis as "Total tests", is this an accurate description of the data being presented? What would be a slightly more accurate label? (1 point)
+
+#### Answer:
+
+#### Question 2: How does this compare to your expectations of log-transformed biplots from lecture? What is happening to the values of our two barplots (non-transformed vs transformed) to produce these results? (2 points)
+
+#### Answer:
+
+#### Question 3: Based on your comparison of the two barplots, does it make sense to log-transform your barplots? Provide your reasoning. (2 points)
+
+#### Answer:
+
+------------------------------------------------------------------------
+
+## 2.5.0 Plot "stacked" log-transformed data as a dot-plot
+
+After working our way through the above example, it's best to consider that a barplot just isn't the best way to express our data. If you need to plot your data as log-transformed values in an interpretable way, switch to a dot-plot to convey your information. To achieve this, however, you'll need to summarize your data before displaying it.
+
+### 2.5.1 Summarize data after grouping (2 points)
+
+Take a quick look at the `respFinalTop5.df` dataframe to remind yourself what it looks like. Our goal is to take the `tests` variable and summarize it based on virus and province. Use the following steps to create a dataframe which summarizes the total tests per virus/province. You will do this as a pipe instead of saving the output to a variable.
+
+1.  Group your data according to expectations
+2.  Summarize group information into a variable `totalTests`
+
+You can compare the output of your pipe to `resp_top5_summary.df`
+
+```{r}
+# Recall what the respFinalTop5.df dataframe looks like
+head(respFinalTop5.df)
+```
+
+```{r}
+# 2.5.1 Summarize respFinalTop5.df
+
+respFinalTop5.df %>%                           
+  ...  
+```
+
+```{r}
+# Compare your pipe to the expected output
+head(resp_top5_summary.df, 10)
+```
+
+------------------------------------------------------------------------
+
+### 2.5.2 Visualize your data as a stacked dotplot aka strip plot (5 points)
+
+Now that you have your data converted into a proper summary of values, you can go ahead and create a dotplot using the appropriate x- and y-axis variables as seen below. You can use the dataframe `resp_top5_summary.df` as your input data.
+
+Hints: You have a number of choices on how to plot your data points. Choose the best one that can help to avoid overlapping datapoints. The points displayed here are `size=4`. Note also the scale of the y-axis!
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Assignments/A2_2.5.2_provinceVirusDotplot.png?raw=true" width="700"/>
+
+Figure 2.5.2: Looks almost like a parallel coordinate plot doesn't it? Really just a line plot without the lines!
+:::
+
+```{r, fig.width=20, fig.height=10}
+# 2.5.2 stacked dot plot of total tests per virus per province
+
+resp_top5_summary.df %>%
+
+  # 1. Data
+  ggplot() +
+    ...
+
+```
+
+------------------------------------------------------------------------
+
+# 3.0.0 Circular barcharts vs Nightingale plots
+
+In lecture we generated a classical Nightingale plot to mirror our stacked barplots. The primary difference being we present them with polar coordinates. One of the issues with this method is the over-inflated look of outer values along the radius of the plot. Meanwhile, inner categories can be nearly impossible to gauge. We can, however, tweak the plot to help give us a better sense of proportions.
+
+Below you'll find a circular barplot outlining percent positivity for 2025-2026 using our list of `top5Provinces`. Please recreate this image:
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Assignments/A2_3.0.0_circularBarplot.png?raw=true" width="700"/>
+
+Figure 3.0.0: Get rid of the disproportionate groups with a circular barplot!
+:::
+
+### 3.0.1 Calculate a data summary for the circular barplot (4 points)
+
+Note that to accomplish this plot you need to first summarize your data in order to properly dodge the subsets of sectors and get the correct height for your bars. To create this summary you'll need to:
+
+1.  Filter your data for the appropriate provinces, season, and virus.
+2.  Reorder your provinces as a factor based on decreasing percent positivity
+3.  Generate a `meanPositive` value based on the appropriate groupings within your data
+
+You can compare your result to the `influenzaTop5_summary.df` object.
+
+```{r}
+# 3.0.1 calculate a summary dataset for circular barplots
+# Calculate the mean positivity per province per month for influenza
+
+respFinalPop.df %>%
+  # Filter data (1 point)
+  filter(...) %>% 
+  
+  # Reorder factor (1 point)
+  mutate(...) %>% 
+  
+  # group data (1 point)
+  group_by(...) %>% 
+  # summarise (1 point)
+  summarise(...)
+
+# Compare this to the pregenerated result
+head(influenzaTop5_summary.df)
+
+```
+
+------------------------------------------------------------------------
+
+## 3.1.0 Create a circular boxplot based on figure 3.0.0 (6 points)
+
+Using the dataset found in `influenzaTop5_summary.df`, use the summary data to generate the plot found in figure 3.0.0.
+
+**Hints:**
+
+-   Notice how each province is represented as it's own bar within a year?
+
+-   `coord_radial()` is a relatively new addition to `ggplot2` which simplifies some of the often-used alterations made to plots generated with `coord_polar()`
+
+-   Take a closer look at the documentation for the `coord_radial()` layer to see what other parameters you can manipulate.
+
+```{r, fig.width=20, fig.height=20}
+# 3.1.0 Circular barplot
+
+# Use the summary data made in 3.0.1  
+influenzaTop5_summary.df %>% 
+
+  # 1. Data
+  ggplot() +
+    theme(text = element_text(size = 20)) + # set text size
+    ...
+```
+
+------------------------------------------------------------------------
+
+# 4.0.0 Generate multiple grouped ridgeline plot densities from dense data (6 points)
+
+From lecture, we created both boxplots and violin plots that we grouped based on factors to create nested box/violin plots. Let's do the same with a ridgeline plot using our `respFinalPop.df` dataframe. Take a close look at the ridgeline plot below and replicate it using the techniques we learned in class.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Assignments/A2_4.0.0_nestedDensity.png?raw=true" width="700"/>
+
+Figure 4.0.0: ridgeline plots can be nested too!
+:::
+
+Hints:
+
+-   Be sure to filter to filter your data correctly!
+
+-   The vertical lines represent the median value for each density ridge.
+
+-   Look into the `geom_density_ridges()` parameters for help!
+
+```{r, fig.width=20, fig.height=20}
+# 4.0.0 Generate a nested ridgeline plot
+
+respFinalPop.df %>% 
+  ... %>% 
+
+  # 1. Data
+  ggplot() +
+  
+  theme_bw() + # make the theme more plain
+  theme(text = element_text(size = 20)) + # set text size
+  theme(panel.grid.major.y = element_line(color="grey60")) + # darken our major y grid
+  
+  ...
+
+```
+
+------------------------------------------------------------------------
+
+### 4.0.1 Dissecting your ridgeline plots (4 points)
+
+#### Question 1: When using a ridgeline plot, in general, what is the overall message you are trying to convey? What is the focus of a ridgeline plot? (2 points)
+
+#### Answer:
+
+#### Question 2: Provide 2 insights about the various sectors that we can draw from this plot. (2 points)
+
+#### Answer:
+
+------------------------------------------------------------------------
+
+# 5.0.0 Generate boxplots of University salary data (8 points)
+
+At the end of lecture we used boxplots to compare University salary data across employers for 1996 versus 2023. We'll extend that a little bit here to compare 3 universities (Toronto, Waterloo and McMaster) as a nested group within multiple years. Take a close look at the following figure and replicate it with the techniques learned in class.
+
+::: {align="center"}
+<img src="https://github.com/uoft-csb-datasci/CSBdatasci_Course_Materials/blob/main/AdvViz/Assignments/A2_5.0.0_nestedBoxplotVirusPositivity.png?raw=true" width="700"/>
+
+Figure 5.0.0 Generate a nested boxplot
+:::
+
+Hints:
+
+-   Set the alpha of your points to 0.5
+
+-   A black and white theme is applied as the base theme for the plot
+
+-   Filter your data properly before generating the plot!
+
+```{r, fig.width=20, fig.height=10}
+# 5.0.0 Generate a grouped and faceted boxplot
+
+# Wrangle your data
+respFinalPop.df %>% 
+  ... %>% 
+  
+  # 1. Data
+  ggplot(.) +
+  
+    ...                  
+    
+    # Set some configurations for the plot
+    theme_bw() +
+    theme(text = element_text(size = 20)) + # set text size
+      
+    ...
+```
+
+------------------------------------------------------------------------
+
+## 5.1.0 Follow-up questions (3 points)
+
+As we can see our final plot isn't perfect but it does convey some interesting information.
+
+#### Question: List 2 general trends or conclusions you can make about influenza positivity from the boxplot provided in 5.0.0? (2 points)
+
+#### Answer:
+
+#### Question: In our figure we nest provinces within each season. If you wanted to compare seasons within each province instead, how would you alter the ggplot code? (1 point)
+
+#### Answer:
+
+------------------------------------------------------------------------
+
+# 6.0.0 Assignment rubric
+
+Please provide answers in markdown or code cells that immediately follow each question section. There are **80** points distributed across this assignment.
+
+|   | Assignment breakdown |   |
+|:--:|:--:|:---|
+| Code | 50% | \- Does it follow best practices? |
+|  |  | \- Does it make good use of available packages? |
+|  |  | \- Was data prepared properly |
+| Answers and Output | 50% | \- Is output based on the correct dataset? |
+|  |  | \- Are groupings appropriate |
+|  |  | \- Are correct titles/axes/legends correct? |
+|  |  | \- Is interpretation of the graphs correct? |
+
+Since coding styles and solutions can differ, students are encouraged to use best practices. Assignments *may* be rewarded for well-coded or elegant solutions.
+
+You can save and download the markdown notebook in its native format. Submit this file to the the appropriate assignment section by 9:59 am on March 24th, 2026.
+
+------------------------------------------------------------------------
+
+## 6.1.0 Assignment Difficulty Feedback (1 point bonus)
+
+Since this is still a rather new course, we are always looking to improve on material. Please answer the following questions:
+
+1.  Approximately how many hours did you spend completing this assignment?
+
+2.  On a scale of 1-10 please rate the difficulty of the assignment. 1 = simple and nothing was learned, 5 = challenging with helpful material learned, 10 = extremely difficult/unable to complete/frustratingly esoteric.
+
+3.  Any additional comments can be placed here.
